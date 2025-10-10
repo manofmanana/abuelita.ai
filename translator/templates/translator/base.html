@@ -1,12 +1,12 @@
-{% load static %}
-{% load i18n %}
-{% get_current_language as LANGUAGE_CODE %}
+{% load static i18n %} {% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE }}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}Abuelita.ai - Bilingual Learning Platform{% endblock %}</title>
+    <title>
+      {% block title %}Abuelita.ai - Bilingual Learning Platform{% endblock %}
+    </title>
 
     <!-- Bootstrap 5 CSS -->
     <link
@@ -124,8 +124,10 @@
             <p class="small">
               "Para que nunca más una abuela tenga que esperar a entender el
               mundo."<br />
-              <em>"So that never again will a grandmother have to wait to
-                understand the world."</em>
+              <em
+                >"So that never again will a grandmother have to wait to
+                understand the world."</em
+              >
             </p>
           </div>
 

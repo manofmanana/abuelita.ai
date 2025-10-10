@@ -1,19 +1,69 @@
-# Python
+# =========================
+# PYTHON BASICS
+# =========================
 __pycache__/
 *.py[cod]
 *.so
+*.egg
+*.egg-info/
+dist/
+build/
 
-# Virtual environments
+# =========================
+# VIRTUAL ENVIRONMENTS
+# =========================
 .venv/
 venv/
+env/
+ENV/
+Pipfile.lock
+poetry.lock
 
-# Environment files
+# =========================
+# ENVIRONMENT & SETTINGS
+# =========================
 .env
+*.local
+*.secret
 
-# Django
+# =========================
+# DJANGO
+# =========================
 *.log
-staticfiles/
+db.sqlite3
 media/
+staticfiles/
+static/
+temp/
+*.pot
 
-# OS files
+# Django translation compiled files
+locale/**/*.mo
+locale/**/*.bak
+
+# =========================
+# TESTS & COVERAGE
+# =========================
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+junit.xml
+
+# =========================
+# OS / EDITOR JUNK
+# =========================
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# =========================
+# GIT
+# =========================
+*.orig
+*.rej

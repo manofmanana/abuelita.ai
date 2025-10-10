@@ -3,6 +3,7 @@
 {% block title %}{% trans "Home - Abuelita.ai" %}{% endblock %}
 {% block home_active %}active{% endblock %}
 {% block content %}
+
 <!-- Background wrapper -->
 <div
   class="background-wrapper"
@@ -16,16 +17,14 @@
     class="bg-overlay"
     style="background-color: rgba(255, 255, 255, 0.55); min-height: 100vh"
   >
-    <!-- Hero Section (unchanged) -->
+    <!-- Hero Section -->
     <section class="hero-section py-5 text-center text-dark">
       <div class="container">
         <h1 class="display-4 fw-bold mb-3">
           <span class="text-primary-custom">¡Hola!</span> Welcome to
           <span class="text-accent">Abuelita.ai</span>
         </h1>
-        <p class="lead text-muted mb-4">
-          {% trans "Bridge language barriers with bilingual translation and cultural wisdom — inspired by my grandmother, Francisca Martínez." %}
-        </p>
+        <p class="lead text-muted mb-4">{% trans "Bridge language barriers with bilingual translation and cultural wisdom — inspired by my grandmother, Francisca Martínez." %}</p>
       </div>
     </section>
 
@@ -45,8 +44,11 @@
             <h3 class="mb-0">
               <i class="bi bi-translate"></i> {% trans "Translation Hub" %}
             </h3>
-            <p class="small mb-0">{% trans "Upload files or type text to translate" %}</p>
+            <p class="small mb-0">
+              {% trans "Upload files or type text to translate" %}
+            </p>
           </div>
+
           <div class="card-body p-4">
             <form
               method="post"
@@ -58,7 +60,9 @@
               <!-- Language Selection -->
               <div class="row align-items-end mb-4">
                 <div class="col-md-5">
-                  <label class="form-label fw-semibold">{% trans "From:" %}</label>
+                  <label class="form-label fw-semibold"
+                    >{% trans "From:" %}</label
+                  >
                   {{ form.source_language }}
                 </div>
                 <div class="col-md-2 text-center">
@@ -72,25 +76,23 @@
                   </button>
                 </div>
                 <div class="col-md-5">
-                  <label class="form-label fw-semibold">{% trans "To:" %}</label>
+                  <label class="form-label fw-semibold"
+                    >{% trans "To:" %}</label
+                  >
                   {{ form.target_language }}
                 </div>
               </div>
 
-              <!-- File Upload (restored) -->
+              <!-- File Upload -->
               <div class="mb-4">
-                <label class="form-label fw-semibold">
-                  <i class="bi bi-cloud-upload"></i> {% trans "Upload file (TXT, DOCX, PDF):" %}
-                </label>
+                <label class="form-label fw-semibold"><i class="bi bi-cloud-upload"></i> {% trans "Upload file (TXT, DOCX, PDF):" %}</label>
                 {{ form.file_upload }}
                 <div class="form-text">{% trans "Upload a document to translate its contents" %}</div>
               </div>
 
               <!-- Text Input -->
               <div class="mb-4">
-                <label class="form-label fw-semibold">
-                  <i class="bi bi-keyboard"></i> {% trans "Text to translate:" %}
-                </label>
+                <label class="form-label fw-semibold"><i class="bi bi-keyboard"></i> {% trans "Text to translate:" %}</label>
                 {{ form.text_input }}
               </div>
 
@@ -105,50 +107,60 @@
               </div>
             </form>
 
-            <!-- Result area (always present so AJAX can populate it) -->
+            <!-- Result area -->
             <div id="translation-result-area" class="mt-5">
               {% if translation_result %}
               <div class="card border-success shadow-sm">
                 <div class="card-header bg-success text-white">
-                  <h5 class="mb-0">
-                    <i class="bi bi-check-circle-fill"></i> {% trans "Translation Result" %}
-                  </h5>
+                  <h5 class="mb-0"><i class="bi bi-check-circle-fill"></i> {% trans "Translation Result" %}</h5>
                 </div>
                 <div class="card-body bg-white">
                   <div class="translation-result p-3 bg-light rounded">
-                    <p class="fs-5 mb-3" id="translation-output">{{ translation_result }}</p>
+                    <p class="fs-5 mb-3" id="translation-output">
+                      {{ translation_result }}
+                    </p>
                     <div class="d-flex gap-2">
-                      <button type="button" class="btn btn-outline-primary btn-sm listen-btn">
+                      <button
+                        type="button"
+                        class="btn btn-outline-primary btn-sm listen-btn"
+                      >
                         <i class="bi bi-volume-up-fill"></i> {% trans "Listen" %}
                       </button>
-                      <button type="button" class="btn btn-outline-secondary btn-sm copy-btn">
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary btn-sm copy-btn"
+                      >
                         <i class="bi bi-clipboard"></i> {% trans "Copy" %}
                       </button>
                       {% if download_url %}
-                      <a href="{{ download_url }}" class="btn btn-outline-success btn-sm">
-                        <i class="bi bi-download"></i> {% trans "Download" %}
-                      </a>
+                      <a href="{{ download_url }}" class="btn btn-outline-success btn-sm"><i class="bi bi-download"></i> {% trans "Download" %}</a>
                       {% endif %}
                     </div>
                   </div>
                 </div>
               </div>
               {% else %}
-              <!-- empty placeholder for AJAX results -->
-              <div class="card border-success shadow-sm d-none" id="translation-result-card">
+              <div
+                class="card border-success shadow-sm d-none"
+                id="translation-result-card"
+              >
                 <div class="card-header bg-success text-white">
-                  <h5 class="mb-0">
-                    <i class="bi bi-check-circle-fill"></i> {% trans "Translation Result" %}
-                  </h5>
+                    <h5 class="mb-0"><i class="bi bi-check-circle-fill"></i> {% trans "Translation Result" %}</h5>
                 </div>
                 <div class="card-body bg-white">
                   <div class="translation-result p-3 bg-light rounded">
                     <p class="fs-5 mb-3" id="translation-output"></p>
                     <div class="d-flex gap-2">
-                      <button type="button" class="btn btn-outline-primary btn-sm listen-btn">
+                      <button
+                        type="button"
+                        class="btn btn-outline-primary btn-sm listen-btn"
+                      >
                         <i class="bi bi-volume-up-fill"></i> {% trans "Listen" %}
                       </button>
-                      <button type="button" class="btn btn-outline-secondary btn-sm copy-btn">
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary btn-sm copy-btn"
+                      >
                         <i class="bi bi-clipboard"></i> {% trans "Copy" %}
                       </button>
                     </div>
@@ -163,4 +175,5 @@
     </section>
   </div>
 </div>
+
 {% endblock %}

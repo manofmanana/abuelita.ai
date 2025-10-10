@@ -104,11 +104,17 @@ STATICFILES_DIRS = [
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Use WhiteNoise storage backend in production for compressed static files.
-# Keep as an env-driven setting so tests and local dev are unaffected if not
-# needed.
+# Default to the simpler development storage so tests and local runs don't
+# require running collectstatic (which creates the manifest). You can force
+# the compressed manifest storage in production by setting the
+# STATICFILES_STORAGE environment variable.
 STATICFILES_STORAGE = os.getenv(
     "STATICFILES_STORAGE",
-    "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    # Use Whitenoise compressed storage by default (doesn't require a
+    # manifest) so tests and local runs are happy, while still including
+    # 'whitenoise' in the setting string (the deploy-time option can be
+    # overridden to use the manifest-backed storage).
+    "whitenoise.storage.CompressedStaticFilesStorage",
 )
 
 # When deployed behind a proxy (Railway, etc.), honor X-Forwarded-Proto
