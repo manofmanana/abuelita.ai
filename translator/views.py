@@ -52,8 +52,23 @@ def home(request):
             # Perform translation
             if content:
                 try:
+                    # Attempt translation using the client-provided source/target.
                     translator = GoogleTranslator(source=src, target=tgt)
                     translation_result = translator.translate(content)
+                    # If the translation is identical to the input (common when
+                    # the provided source language is wrong), retry with auto
+                    # language detection. This is a conservative fallback that
+                    # helps mobile users who may accidentally have the source
+                    # set incorrectly.
+                    try:
+                        if translation_result and content and translation_result.strip().lower() == content.strip().lower() and src != 'auto':
+                            auto_translator = GoogleTranslator(source='auto', target=tgt)
+                            alt = auto_translator.translate(content)
+                            if alt and alt.strip().lower() != content.strip().lower():
+                                translation_result = alt
+                    except Exception:
+                        # If auto-detect retry fails for any reason, stick with original result
+                        pass
                     # If user uploaded a file, write translated text to a temp file
                     # and provide a download URL so the user can retrieve it.
                     if uploaded_file:
