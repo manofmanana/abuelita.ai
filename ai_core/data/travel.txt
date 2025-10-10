@@ -1,0 +1,5 @@
+plane, airport, ticket, passport, luggage
+I need a ticket to the airport.
+My passport is in my bag.
+Where is the boarding gate?
+I lost my luggage at customs.

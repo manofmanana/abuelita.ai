@@ -1,0 +1,5 @@
+# Development / optional ML dependencies
+sentence-transformers
+transformers
+torch
+nltk

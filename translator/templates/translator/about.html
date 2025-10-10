@@ -1,0 +1,140 @@
+{% extends "translator/base.html" %}
+{% load i18n static %}
+
+{% block title %}
+  {% trans "About - Abuelita.ai" %}
+{% endblock %}
+{% block about_active %}
+  active
+{% endblock %}
+{% block extra_body_class %}
+  about-page
+{% endblock %}
+
+{% block content %}
+<div class="background-wrapper"
+     style="background: url('{% static "backgrounds/rancho.jpg" %}') no-repeat center center fixed; background-size: cover;">
+  <div class="bg-overlay" style="background-color: rgba(255,255,255,0.55); min-height: 100vh;">
+
+    <!-- Hero Section -->
+    <section class="py-5 text-center text-dark">
+      <div class="container">
+        <h1 class="display-4 fw-bold mb-3 text-primary-custom">
+          {% trans "For My Abuelita," %}
+          <span class="text-accent">{% trans "Francisca Martínez" %}</span>
+        </h1>
+        <p class="lead text-muted mx-auto" style="max-width: 720px;">
+          {% blocktrans %}
+          Abuelita.ai was created in honor of my grandmother, who inspired this project with her strength, curiosity, and love for learning, so no abuela ever has to wait to understand the world again.
+          {% endblocktrans %}
+        </p>
+      </div>
+    </section>
+
+    <!-- Story Section -->
+    <section class="py-5">
+      <div class="container">
+        <div class="row align-items-center g-5">
+          <div class="col-lg-6 text-center">
+            <div class="photo-frame shadow mx-auto">
+              <img src="{% static "backgrounds/abuelita.jpg" %}"
+                   alt="{% trans "Abuelita portrait" %}"
+                   class="img-fluid abuelita-photo" />
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <h2 class="fw-bold text-primary-custom mb-3">
+              <i class="bi bi-heart-fill text-accent"></i> {% trans "Her Story" %}
+            </h2>
+            <p class="fs-5 text-dark">
+              {% blocktrans %}
+              Born in Nochistlán, Zacatecas, México, Francisca dedicated her life to her family and community. Moving to the U.S., she faced the challenge of learning a new language while preserving her Mexican roots.
+              {% endblocktrans %}
+            </p>
+            <p class="text-muted">
+              {% blocktrans %}
+              She inspired the mission behind Abuelita.ai, blending technology with empathy, helping people communicate across generations and cultures.
+              {% endblocktrans %}
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mission Section -->
+    <section class="py-5">
+      <div class="container">
+        <div class="text-center mb-5">
+          <h2 class="fw-bold text-primary-custom">
+            <i class="bi bi-stars"></i> {% trans "Our Mission" %}
+          </h2>
+          <p class="text-muted mx-auto" style="max-width: 700px;">
+            {% blocktrans %}
+            To make learning languages feel like sitting at your grandmother’s table — warm, patient, and full of heart.
+            {% endblocktrans %}
+          </p>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body text-center">
+                <i class="bi bi-translate display-5 text-primary mb-3"></i>
+                <h5 class="fw-bold">{% trans "Empower Communication" %}</h5>
+                <p class="text-muted">
+                  {% blocktrans %}
+                  Breaking language barriers through translation and cultural connection.
+                  {% endblocktrans %}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body text-center">
+                <i class="bi bi-heart display-5 text-accent mb-3"></i>
+                <h5 class="fw-bold">{% trans "Honor Heritage" %}</h5>
+                <p class="text-muted">
+                  {% blocktrans %}
+                  Preserving the wisdom, warmth, and voice of our elders in every interaction.
+                  {% endblocktrans %}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body text-center">
+                <i class="bi bi-lightbulb display-5 text-warning mb-3"></i>
+                <h5 class="fw-bold">{% trans "Inspire Learning" %}</h5>
+                <p class="text-muted">
+                  {% blocktrans %}
+                  Encouraging curiosity and growth through bilingual education and AI tools.
+                  {% endblocktrans %}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dedication Section -->
+    <section class="py-5 text-center">
+      <div class="container">
+        <blockquote class="blockquote mb-4">
+          <p class="fs-4 text-dark fw-semibold fst-italic">
+            “{% trans "Para que nunca más una abuela tenga que esperar a entender el mundo." %}”
+          </p>
+        </blockquote>
+        <p class="text-muted">
+          {% trans "Dedicated to all the grandmothers who inspire us to keep learning." %}
+        </p>
+      </div>
+    </section>
+
+  </div>
+</div>
+{% endblock %}

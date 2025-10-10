@@ -1,0 +1,5 @@
+subway, station, ticket, route, platform
+Does this train stop at the central station?
+I need a single ticket for zone two.
+Which platform for the 8:15 express?
+The route map is on the wall.

@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment files
+.env
+
+# Django
+*.log
+staticfiles/
+media/
+
+# OS files
+.DS_Store

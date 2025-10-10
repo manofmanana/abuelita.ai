@@ -1,0 +1,203 @@
+{% load static %}
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Abuelita.ai - Bilingual Learning Platform{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap Icons -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Comfortaa:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'translator/css/styles.css' %}" />
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      type="image/png"
+      href="{% static 'backgrounds/favicon.png' %}"
+    />
+
+    {% block extra_css %}{% endblock %}
+  </head>
+
+  <body class="{% block extra_body_class %}{% endblock %}">
+    <!-- Tricolor Identity Bar -->
+    <div class="tricolor-bar"></div>
+
+    <!-- Navigation -->
+    <nav
+      class="navbar navbar-expand-lg navbar-dark bg-primary-custom sticky-top"
+    >
+      <div class="container">
+        <a
+          class="navbar-brand fw-bold fs-3"
+          href="{% url 'translator:index' %}"
+        >
+          <i class="bi bi-heart-fill text-accent"></i>
+          Abuelita.ai
+        </a>
+
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a
+                class="nav-link {% block home_active %}{% endblock %}"
+                href="{% url 'translator:index' %}"
+              >
+                <i class="bi bi-house-fill"></i> {% trans "Home" %}
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {% block learn_active %}{% endblock %}"
+                href="{% url 'translator:learn' %}"
+              >
+                <i class="bi bi-book-fill"></i> {% trans "Learn" %}
+              </a>
+            </li>
+            <!-- Culture page removed -->
+            <li class="nav-item">
+              <a
+                class="nav-link {% block about_active %}{% endblock %}"
+                href="{% url 'translator:about' %}"
+              >
+                <i class="bi bi-heart-fill"></i> {% trans "About" %}
+              </a>
+            </li>
+          </ul>
+
+          <!-- 🌐 Language Switcher -->
+          <div class="navbar-nav">
+            {% include "translator/partials/lang_switch.html" %}
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Page background wrapper (optional, defined by child templates) -->
+    {% block page_background %}{% endblock %}
+
+    <!-- Main Content -->
+    <main>{% block content %}{% endblock %}</main>
+
+    {% block end_background %}{% endblock %}
+
+    <!-- Footer -->
+    <footer class="bg-primary-custom text-white mt-5 py-4">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6">
+            <h5 class="mb-3">
+              <i class="bi bi-heart-fill text-accent"></i>
+              Abuelita.ai
+            </h5>
+            <p class="mb-2">
+              <strong>Para mi abuelita, Francisca Martínez</strong>
+            </p>
+            <p class="small">
+              "Para que nunca más una abuela tenga que esperar a entender el
+              mundo."<br />
+              <em>"So that never again will a grandmother have to wait to
+                understand the world."</em>
+            </p>
+          </div>
+
+          <div class="col-md-3">
+            <h6>{% trans "Features" %}</h6>
+            <ul class="list-unstyled small">
+              <li>
+                <i class="bi bi-translate"></i> {% trans "Smart Translation" %}
+              </li>
+              <li>
+                <i class="bi bi-mic-fill"></i> {% trans "Voice Recognition" %}
+              </li>
+              <li>
+                <i class="bi bi-volume-up-fill"></i>
+                {% if LANGUAGE_CODE == 'es' %} Texto a voz {% else %} {% trans "Text-to-Speech" %} {% endif %}
+              </li>
+              <li>
+                <i class="bi bi-book"></i> {% trans "Interactive Lessons" %}
+              </li>
+            </ul>
+          </div>
+
+          <div class="col-md-3">
+            <h6>{% trans "Cultural Learning" %}</h6>
+            <ul class="list-unstyled small">
+              <li>
+                <i class="bi bi-chat-quote"></i> {% trans "Idioms & Sayings" %}
+              </li>
+              <li>
+                <i class="bi bi-emoji-smile"></i> {% trans "Mexican Culture" %}
+              </li>
+              <li>
+                <i class="bi bi-people-fill"></i> {% trans "Community Wisdom" %}
+              </li>
+              <li><i class="bi bi-heart"></i> {% trans "Abuela's Touch" %}</li>
+            </ul>
+          </div>
+        </div>
+
+        <hr class="my-3" />
+
+        <div class="row align-items-center">
+          <div class="col-md-6">
+            <!-- left column intentionally simple -->
+            <small class="d-block text-white">&copy; Alejandro Ines 2025</small>
+          </div>
+          <div class="col-md-6 text-md-end">
+            <small>
+              <i class="bi bi-code-slash"></i>
+              {% if LANGUAGE_CODE == 'es' %} Desarrollado con Django e IA {% else %} {% trans "Built with Django & AI" %} {% endif %}
+            </small>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JS -->
+    <script src="{% static 'translator/js/main.js' %}"></script>
+
+    <!-- Toast container for dynamic notifications -->
+    <div
+      aria-live="polite"
+      aria-atomic="true"
+      class="position-fixed bottom-0 end-0 p-3"
+      style="z-index: 1080"
+    >
+      <div id="toast-container"></div>
+    </div>
+
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

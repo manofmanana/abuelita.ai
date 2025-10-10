@@ -1,0 +1,3 @@
+locale/es/LC_MESSAGES/django.po:379: duplicate message definition...
+locale/es/LC_MESSAGES/django.po:258: ...this is the location of the first definition
+msgfmt: found 1 fatal error

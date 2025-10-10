@@ -1,0 +1,405 @@
+{% extends 'translator/base.html' %} {% load static %}
+{% block title %}Home -
+Abuelita.ai{% endblock %}
+{% block home_active %}active{% endblock %}
+{% block
+content %}
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="container">
+    <div class="row align-items-center min-vh-50">
+      <div class="col-lg-6">
+        <div class="hero-content">
+          <h1 class="display-4 fw-bold mb-4">
+            <span class="text-primary-custom">¡Hola!</span> Welcome to
+            <span class="text-accent">Abuelita.ai</span>
+          </h1>
+          <p class="lead mb-4">
+            Bridge language barriers with AI-powered translation, cultural
+            wisdom, and the warm spirit of my grandmother, Francisca Martínez.
+          </p>
+          <div class="d-flex gap-3 mb-4">
+            <span class="badge bg-secondary fs-6">
+              <i class="bi bi-translate"></i> Smart Translation
+            </span>
+            <span class="badge bg-secondary fs-6">
+              <i class="bi bi-mic-fill"></i> Voice Input
+            </span>
+            <span class="badge bg-secondary fs-6">
+              <i class="bi bi-volume-up-fill"></i> Audio Output
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="hero-image text-center">
+          <div class="papel-picado-frame p-4">
+            <i class="bi bi-heart-fill display-1 text-accent"></i>
+            <h3 class="mt-3 text-primary-custom">Con amor de la abuela</h3>
+            <p class="text-muted">With love from grandma</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Translation Section -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="card shadow-lg border-0">
+          <div
+            class="card-header bg-primary-custom text-white text-center py-3"
+          >
+            <h3 class="mb-0">
+              <i class="bi bi-translate"></i>
+              Translation Hub
+            </h3>
+            <p class="mb-0 small">Upload files or type text to translate</p>
+          </div>
+          <div class="card-body p-4">
+            <form
+              method="post"
+              enctype="multipart/form-data"
+              id="translation-form"
+            >
+              {% csrf_token %}
+
+              <!-- Language Selection -->
+              <div class="row mb-4">
+                <div class="col-md-5">
+                  <label class="form-label fw-semibold"
+                    >{{ form.source_language.label }}</label
+                  >
+                  {{ form.source_language }}
+                </div>
+                <div class="col-md-2 text-center align-self-end">
+                  <button
+                    type="button"
+                    class="btn btn-outline-primary btn-sm"
+                    id="swap-languages"
+                  >
+                    <i class="bi bi-arrow-left-right"></i>
+                  </button>
+                </div>
+                <div class="col-md-5">
+                  <label class="form-label fw-semibold"
+                    >{{ form.target_language.label }}</label
+                  >
+                  {{ form.target_language }}
+                </div>
+              </div>
+
+              <!-- File Upload -->
+              <div class="mb-4">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-cloud-upload"></i>
+                  {{ form.file_upload.label }}
+                </label>
+                {{ form.file_upload }}
+                <div class="form-text">{{ form.file_upload.help_text }}</div>
+              </div>
+
+              <!-- Text Input -->
+              <div class="mb-4">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-keyboard"></i>
+                  {{ form.text_input.label }}
+                </label>
+                {{ form.text_input }}
+
+                <!-- Voice Input Button -->
+                <div class="mt-2">
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    id="voice-input-btn"
+                  >
+                    <i class="bi bi-mic-fill"></i> Voice Input
+                  </button>
+                  <span
+                    id="listening-indicator"
+                    class="text-danger ms-2 d-none"
+                  >
+                    <i class="bi bi-record-circle-fill"></i> Listening...
+                  </span>
+                </div>
+              </div>
+
+              <!-- Submit Button -->
+              <div class="text-center">
+                <button
+                  type="submit"
+                  class="btn btn-primary-custom btn-lg px-5"
+                >
+                  <i class="bi bi-translate"></i>
+                  Translate
+                </button>
+              </div>
+            </form>
+
+            {% if translation_result %}
+            <!-- Translation Results -->
+            <div class="mt-5">
+              <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                  <h5 class="mb-0">
+                    <i class="bi bi-check-circle-fill"></i>
+                    Translation Result
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="translation-result p-3 bg-light rounded">
+                    <p class="mb-3 fs-5">{{ translation_result }}</p>
+                    <div class="d-flex gap-2">
+                      <button
+                        type="button"
+                        class="btn btn-outline-primary btn-sm"
+                        onclick="speakText('{{ translation_result }}', 'es')"
+                      >
+                        <i class="bi bi-volume-up-fill"></i> Listen
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary btn-sm"
+                        onclick="copyToClipboard('{{ translation_result }}')"
+                      >
+                        <i class="bi bi-clipboard"></i> Copy
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Recent Translations -->
+{% if recent_translations %}
+<section class="py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <h3 class="text-center mb-4">
+          <i class="bi bi-clock-history"></i>
+          Recent Translations
+        </h3>
+        <div class="row">
+          {% for translation in recent_translations %}
+          <div class="col-md-6 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body">
+                <div
+                  class="d-flex justify-content-between align-items-start mb-2"
+                >
+                  <small class="badge bg-primary">
+                    {{ translation.source_language|upper }} → {{
+                    translation.target_language|upper }}
+                  </small>
+                  <small class="text-muted"
+                    >{{ translation.created_at|timesince }} ago</small
+                  >
+                </div>
+                <p class="card-text small mb-2">
+                  <strong>Original:</strong> {{
+                  translation.original_text|truncatechars:100 }}
+                </p>
+                <p class="card-text small">
+                  <strong>Translation:</strong> {{
+                  translation.translated_text|truncatechars:100 }}
+                </p>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- Features Overview -->
+<section class="py-5 bg-accent-light">
+  <div class="container">
+    <div class="row text-center">
+      <div class="col-12 mb-5">
+        <h2 class="text-primary-custom">Explore More Features</h2>
+        <p class="lead">Discover the full power of Abuelita.ai</p>
+      </div>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="feature-card text-center p-4">
+          <div class="feature-icon mb-3">
+            <i class="bi bi-book-fill display-4 text-primary-custom"></i>
+          </div>
+          <h4>Interactive Lessons</h4>
+          <p>
+            Progressive AI-generated lessons tailored to your learning style and
+            pace.
+          </p>
+          <a href="{% url 'translator:learn' %}" class="btn btn-outline-primary"
+            >Start Learning</a
+          >
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card text-center p-4">
+          <div class="feature-icon mb-3">
+            <i class="bi bi-palette-fill display-4 text-accent"></i>
+          </div>
+          <h4>Cultural Wisdom</h4>
+          <p>
+            Learn idioms, slang, and cultural nuances with Abuelita's warm
+            explanations.
+          </p>
+          <a
+            href="{% url 'translator:culture' %}"
+            class="btn btn-outline-primary"
+            >Explore Culture</a
+          >
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card text-center p-4">
+          <div class="feature-icon mb-3">
+            <i class="bi bi-heart-fill display-4 text-danger"></i>
+          </div>
+          <h4>Grandmother's Story</h4>
+          <p>
+            Learn about Francisca Martínez and the inspiration behind this
+            project.
+          </p>
+          <a href="{% url 'translator:about' %}" class="btn btn-outline-primary"
+            >Read Her Story</a
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+  // Swap languages functionality
+  document
+    .getElementById("swap-languages")
+    .addEventListener("click", function () {
+      const sourceSelect = document.getElementById("id_source_language");
+      const targetSelect = document.getElementById("id_target_language");
+
+      const sourceValue = sourceSelect.value;
+      const targetValue = targetSelect.value;
+
+      if (sourceValue !== "auto") {
+        sourceSelect.value = targetValue;
+        targetSelect.value = sourceValue;
+      }
+    });
+
+  // Voice input functionality (placeholder - requires Web Speech API)
+  document
+    .getElementById("voice-input-btn")
+    .addEventListener("click", function () {
+      if ("webkitSpeechRecognition" in window) {
+        const recognition = new webkitSpeechRecognition();
+        const textInput = document.getElementById("text-input");
+        const listeningIndicator = document.getElementById(
+          "listening-indicator"
+        );
+
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = "en-US"; // You could dynamically set this based on source language
+
+        recognition.onstart = function () {
+          listeningIndicator.classList.remove("d-none");
+        };
+
+        recognition.onresult = function (event) {
+          const transcript = event.results[0][0].transcript;
+          textInput.value = transcript;
+          listeningIndicator.classList.add("d-none");
+        };
+
+        recognition.onerror = function (event) {
+          console.error("Speech recognition error:", event.error);
+          listeningIndicator.classList.add("d-none");
+        };
+
+        recognition.onend = function () {
+          listeningIndicator.classList.add("d-none");
+        };
+
+        recognition.start();
+      } else {
+        alert("Voice recognition is not supported in your browser.");
+      }
+    });
+
+  // Text-to-speech functionality
+  function speakText(text, language) {
+    if ("speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = language === "es" ? "es-ES" : "en-US";
+      speechSynthesis.speak(utterance);
+    } else {
+      // Fallback to API call for TTS
+      fetch('{% url "translator:speak_api" %}', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]")
+            .value,
+        },
+        body: JSON.stringify({
+          text: text,
+          language: language,
+        }),
+      })
+        .then((response) => response.blob())
+        .then((blob) => {
+          const audio = new Audio(URL.createObjectURL(blob));
+          audio.play();
+        })
+        .catch((error) => console.error("TTS error:", error));
+    }
+  }
+
+  // Copy to clipboard functionality
+  function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function () {
+      // Show success message
+      const toast = document.createElement("div");
+      toast.className =
+        "toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-3";
+      toast.setAttribute("role", "alert");
+      toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-check-circle-fill"></i> Copied to clipboard!
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+      document.body.appendChild(toast);
+
+      const bsToast = new bootstrap.Toast(toast);
+      bsToast.show();
+
+      // Remove toast after it's hidden
+      toast.addEventListener("hidden.bs.toast", function () {
+        document.body.removeChild(toast);
+      });
+    });
+  }
+</script>
+{% endblock %}

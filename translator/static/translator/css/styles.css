@@ -1,0 +1,294 @@
+/* Abuelita.ai - Custom CSS with Mexican Pueblo Theme */
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Comfortaa:wght@300;400;500;600;700&display=swap');
+
+/* =========================
+   ROOT VARIABLES & PALETTE
+   ========================= */
+:root {
+  --green-dark: #00452D;
+  --green: #006847;
+  --green-bright: #0c8f5f;
+  --red: #CE1126;
+  --red-dark: #9F0B1C;
+  --white: rgba(255,255,255,0.96);
+  /* Made more transparent to increase background translucency on special pages */
+  --white-soft: rgba(255,255,255,0.45);
+  --white-alt: rgba(255,255,255,0.35);
+  --primary-custom: var(--green-dark);
+  --secondary-custom: var(--green);
+  --accent: var(--red);
+  --accent-light: #FFE5EA;
+  --turquoise: var(--green);
+  --text-dark: #10211C;
+  --text-light: #000000;
+  --bg-light: var(--white-soft);
+  --border-light: rgba(0,70,45,0.18);
+  --gradient-primary: linear-gradient(135deg,var(--green-dark) 0%,var(--green) 55%,var(--green-bright) 100%);
+  --gradient-accent: linear-gradient(135deg,var(--red) 0%,var(--red-dark) 100%);
+  --gradient-warm: linear-gradient(135deg,var(--white) 0%,var(--white-soft) 100%);
+  --focus-ring: rgba(0,104,71,0.45);
+  --shadow-soft: 0 4px 14px rgba(0,0,0,0.08);
+  --shadow-medium: 0 8px 28px rgba(0,0,0,0.14);
+
+  /* Aliases */
+  --green-flag: var(--green-dark);
+  --green-flag-light: var(--green);
+  --red-flag: var(--red);
+  --red-flag-dark: var(--red-dark);
+  --white-flag: var(--white);
+  --off-white: var(--white-soft);
+  --terracotta: var(--red-dark);
+}
+
+/* =========================
+   BASE TYPOGRAPHY & COLORS
+   ========================= */
+body {
+  font-family: 'Comfortaa', sans-serif;
+  color: var(--text-dark);
+  background: linear-gradient(180deg, var(--white) 0%, var(--white-soft) 60%, rgba(0,104,71,0.05) 100%);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 600;
+}
+
+.text-primary-custom { color: var(--primary-custom) !important; }
+.text-accent { color: var(--accent) !important; }
+
+.bg-primary-custom {
+  background: linear-gradient(90deg, var(--green-flag) 0%, var(--green-flag-light) 40%, var(--red-flag) 100%) !important;
+}
+
+.bg-accent { background-color: var(--accent) !important; }
+.bg-accent-light { background-color: var(--accent-light) !important; }
+
+/* =========================
+   BUTTONS
+   ========================= */
+.btn-primary-custom {
+  background: var(--green-dark);
+  border: 2px solid var(--green-dark);
+  color: var(--white);
+  font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 28px;
+  transition: all .28s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+}
+
+.btn-primary-custom:hover {
+  background: var(--green);
+  border-color: var(--green);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.28);
+}
+
+.btn-accent {
+  background: var(--red);
+  border: 2px solid var(--red);
+  color: var(--white);
+  font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 28px;
+  transition: all .28s ease;
+  box-shadow: 0 4px 12px rgba(206,17,38,0.35);
+}
+
+.btn-accent:hover {
+  background: var(--red-dark);
+  border-color: var(--red-dark);
+  transform: translateY(-3px);
+}
+
+/* =========================
+   NAVIGATION
+   ========================= */
+.navbar-brand {
+  font-family: 'Fredoka', sans-serif !important;
+  font-size: 1.8rem !important;
+}
+
+.nav-link {
+  font-weight: 500;
+  border-radius: 20px;
+  margin: 0 5px;
+  transition: all 0.3s ease;
+}
+
+.nav-link:hover { background-color: rgba(255,255,255,0.1); }
+.nav-link.active { background-color: rgba(255,255,255,0.2); font-weight: 600; }
+
+/* =========================
+   HERO SECTION
+   ========================= */
+.hero-section {
+  position: relative;
+  overflow: hidden;
+}
+.hero-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='m0 40l40-40h-40v40zm40 0v-40h-40l40 40z'/%3E%3C/g%3E%3C/svg%3E") repeat;
+  z-index: 1;
+}
+.hero-content, .hero-image { position: relative; z-index: 2; }
+
+/* =========================
+   CARDS & FEATURES
+   ========================= */
+.card {
+  border: none;
+  border-radius: 15px;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  background-color: var(--white);
+  transition: all 0.3s ease;
+}
+.card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+
+.feature-card {
+  background: var(--white-flag);
+  border-radius: 22px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,70,45,0.18);
+  transition: all .35s ease;
+}
+.feature-card:hover { transform: translateY(-10px); }
+
+/* =========================
+   ABOUT PAGE & PHOTO FRAME
+   ========================= */
+.photo-frame {
+  width: 300px;
+  height: 300px;
+  border: 8px solid var(--white-flag);
+  border-radius: 12px;
+  box-shadow: 0 10px 34px -4px rgba(0,0,0,0.3);
+  overflow: hidden;
+  background: linear-gradient(150deg, var(--green-flag) 0%, var(--green-flag-light) 45%, var(--red-flag) 100%);
+}
+
+.photo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  border-radius: 8px;
+  border: 4px solid rgba(255,255,255,0.6);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+  transition: transform 0.3s ease;
+}
+
+.photo-frame img:hover {
+  transform: scale(1.03);
+}
+
+/* =========================
+   ABOUT PAGE STYLING
+   ========================= */
+body.about-page {
+  background: url('/static/backgrounds/about.jpg') no-repeat center center fixed;
+  background-size: cover;
+}
+body.about-page .story-block {
+  background-color: rgba(0, 0, 0, 0.55);
+  border-radius: 1rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  display: inline-block;
+}
+body.about-page .story-block h4,
+body.about-page .story-block p,
+body.about-page .story-block span,
+body.about-page .story-block li,
+body.about-page h2.text-primary-custom.mb-5 {
+  color: #000 !important;
+}
+
+/* Make learn & culture pages use translucent whites for cards and surfaces */
+body.learn-page .card,
+body.culture-page .card {
+  /* use the slightly translucent bg used across overlays */
+  background-color: var(--bg-light) !important;
+}
+
+/* Some templates explicitly use bg-white on card-body; override that on these pages */
+body.learn-page .card-body.bg-white,
+body.culture-page .card-body.bg-white {
+  background-color: var(--bg-light) !important;
+}
+
+/* =========================
+   UTILITY ELEMENTS
+   ========================= */
+.bg-gradient-warm {
+  background: linear-gradient(135deg, var(--green-flag) 0%, var(--green-flag-light) 40%, var(--white-flag) 60%, var(--red-flag) 100%);
+}
+
+footer {
+  background: var(--green-flag) !important;
+}
+footer h5, footer h6 {
+  font-family: 'Fredoka', sans-serif;
+}
+
+/* Make muted text and bg utility classes follow our palette (improves readability) */
+.text-muted { color: var(--text-light) !important; }
+.bg-white { background-color: var(--white) !important; }
+.bg-light { background-color: var(--bg-light) !important; }
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width: 768px) {
+  .hero-section { text-align: center; padding: 3rem 0; }
+  .display-4 { font-size: 2rem; }
+  .feature-card { margin-bottom: 2rem; }
+  .btn-primary-custom, .btn-accent { width: 100%; margin-bottom: 1rem; }
+}
+
+/* =========================
+   BILINGUAL ITEM STYLES
+   ========================= */
+.bilingual-item { padding: .5rem; border-bottom: 1px dashed rgba(0,0,0,0.06); }
+.bilingual-item:hover { background: rgba(0,104,71,0.02); }
+.bilingual-expanded { padding: .6rem; background: rgba(255,255,255,0.96); border-radius: 6px; border: 1px solid rgba(0,0,0,0.04); overflow: hidden; max-height: 0; opacity: 0; transition: max-height 320ms ease, opacity 240ms ease; }
+.bilingual-expanded.is-open { max-height: 400px; opacity: 1; }
+.bilingual-compact { font-weight: 600; }
+
+.bilingual-toggle { width: 100%; text-decoration: none; color: inherit; }
+.bilingual-toggle:focus { outline: 3px solid var(--focus-ring); border-radius: 4px; }
+
+/* Caret and easing */
+.bilingual-toggle .caret { transition: transform 220ms ease; font-size: .9rem; color: rgba(0,0,0,0.45); }
+.bilingual-toggle .caret.rotated { transform: rotate(180deg); color: var(--primary-custom); }
+.bilingual-expanded { transition: max-height 360ms cubic-bezier(.2,.9,.2,1), opacity 260ms ease; }
+
+/* =========================
+   ANIMATIONS
+   ========================= */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up { animation: fadeInUp 0.6s ease-out; }
+
+@keyframes pulse {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.pulse { animation: pulse 2s infinite; }
+
+/* =========================
+   SCROLLBAR
+   ========================= */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-light); }
+::-webkit-scrollbar-thumb { background: var(--primary-custom); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--secondary-custom); }

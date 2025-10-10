@@ -1,0 +1,298 @@
+{% extends "translator/base.html" %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block title %}{% trans "Language Learning Hub" %}{% endblock %}
+
+{% get_current_language as LANGUAGE_CODE %}
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section py-5 text-center">
+  <div class="container">
+    <h1 class="display-5 fw-bold text-primary-custom mb-3">
+      <i class="bi bi-book-fill text-accent"></i> {% trans "Language Learning Hub" %}
+    </h1>
+    <p class="lead text-muted mb-4">
+      {% trans "Guided lessons by Abuelita — learn languages with warmth, humor, and cultural wisdom." %}
+    </p>
+  </div>
+</section>
+
+<!-- Learning Form -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <div class="card shadow-lg border-0">
+      <div class="card-header bg-primary-custom text-white text-center py-3">
+        <h3 class="mb-0">
+          <i class="bi bi-chat-dots"></i> {% trans "Start a Lesson" %}
+        </h3>
+        <p class="small mb-0">
+          {% trans "Choose your path and let Abuelita guide you" %}
+        </p>
+      </div>
+      <div class="card-body p-4">
+        <form method="post" id="learn-form">
+          {% csrf_token %}
+          <div class="mb-4">
+            <label class="form-label fw-semibold" for="input_text">
+              <i class="bi bi-pencil-square"></i> {% trans "What would you like to learn about?" %}
+            </label>
+            <textarea
+              name="input_text"
+              id="input_text"
+              class="form-control"
+              rows="5"
+              placeholder="{% trans 'e.g. Common greetings, colors, or simple conversations...' %}"
+            ></textarea>
+          </div>
+          <div class="text-center">
+            <button type="submit" class="btn btn-primary-custom btn-lg px-5">
+              <i class="bi bi-lightbulb"></i> {% trans "Learn with Abuelita" %}
+            </button>
+          </div>
+        </form>
+
+        <!-- Lesson Result -->
+        <div class="mt-5 fade-in-up">
+          <div class="card border-success shadow-sm">
+            <div class="card-header bg-success text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-book-half"></i> {% trans "Lesson Result" %}
+              </h5>
+            </div>
+            <div id="learn-result-body" class="card-body bg-white">
+              {% if lesson_struct %}
+              <div class="translation-result p-3 rounded bg-light">
+                <h6 class="fw-semibold">{% trans "Topic" %}: {% if LANGUAGE_CODE == 'es' %}{{ lesson_struct.topic_es }}{% else %}{{ lesson_struct.topic_en }}{% endif %}</h6>
+                {% if LANGUAGE_CODE == 'es' %}
+                <div class="mb-2 small text-muted">{% trans "Haz clic en cualquier frase o ejemplo para ver Inglés y Español lado a lado." %}</div>
+                {% else %}
+                <div class="mb-2 small text-muted">{% trans "Tip: Click any phrase or example to view English and Spanish side-by-side." %}</div>
+                {% endif %}
+
+                <div>
+                  {# Progression view: Easy -> Medium -> Hard using grouped lists from lesson_struct #}
+                  <div class="mb-3">
+                    <strong>{% if LANGUAGE_CODE == 'es' %}{{ lesson_struct.labels.lesson_progression_es|default:"Progresión de la lección" }}{% else %}{{ lesson_struct.labels.lesson_progression_en|default:"Lesson progression" }}{% endif %}:</strong>
+                    <div class="btn-group ms-2" role="group" aria-label="difficulty-tabs">
+                      <button type="button" class="btn btn-sm btn-outline-secondary difficulty-tab" data-diff="easy">{% if LANGUAGE_CODE == 'es' %}{{ lesson_struct.labels.difficulty_es.easy }}{% else %}{{ lesson_struct.labels.difficulty_en.easy }}{% endif %}</button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary difficulty-tab" data-diff="medium">{% if LANGUAGE_CODE == 'es' %}{{ lesson_struct.labels.difficulty_es.medium }}{% else %}{{ lesson_struct.labels.difficulty_en.medium }}{% endif %}</button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary difficulty-tab" data-diff="hard">{% if LANGUAGE_CODE == 'es' %}{{ lesson_struct.labels.difficulty_es.hard }}{% else %}{{ lesson_struct.labels.difficulty_en.hard }}{% endif %}</button>
+                    </div>
+                  </div>
+
+                  <div class="difficulty-section" data-diff="easy" style="display:none">
+                    <h6>{% if LANGUAGE_CODE == 'es' %}{{ lesson_struct.labels.phrases_es|default:'Frases' }}{% else %}{{ lesson_struct.labels.phrases_en|default:'Phrases' }}{% endif %} - {% if LANGUAGE_CODE == 'es' %}{{ lesson_struct.labels.difficulty_es.easy }}{% else %}{{ lesson_struct.labels.difficulty_en.easy }}{% endif %}</h6>
+                    <ul>
+                      {% for p in lesson_struct.phrases_by_difficulty.easy %}
+                        <li class="bilingual-item">
+                          {% if LANGUAGE_CODE == 'es' %}
+                            <button type="button" class="bilingual-toggle btn btn-link p-0 text-start" aria-expanded="false" aria-controls="phrase-diff-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}">
+                              <div class="d-flex align-items-center"><div class="bilingual-compact">ES: {{ p.es }}</div><i class="bi bi-caret-down-fill caret ms-2"></i></div>
+                            </button>
+                            <div id="phrase-diff-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}" class="bilingual-expanded mt-2" aria-hidden="true">
+                              <div class="row"><div class="col-12"><strong>EN</strong>: {{ p.en }}</div></div>
+                              {% if p.paraphrases_en %}
+                                <div class="mt-2 small text-muted">{{ lesson_struct.labels.paraphrases_es }}:</div>
+                                <ul>
+                                  {% for para in p.paraphrases_en %}
+                                    <li class="small">{{ para }}</li>
+                                  {% endfor %}
+                                </ul>
+                              {% endif %}
+                            </div>
+                          {% else %}
+                            <button type="button" class="bilingual-toggle btn btn-link p-0 text-start" aria-expanded="false" aria-controls="phrase-diff-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}">
+                              <div class="d-flex align-items-center"><div class="bilingual-compact">EN: {{ p.en }}</div><i class="bi bi-caret-down-fill caret ms-2"></i></div>
+                            </button>
+                            <div id="phrase-diff-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}" class="bilingual-expanded mt-2" aria-hidden="true">
+                              <div class="row"><div class="col-12"><strong>ES</strong>: {{ p.es }}</div></div>
+                              {% if p.paraphrases_en %}
+                                <div class="mt-2 small text-muted">{{ lesson_struct.labels.paraphrases_en }}:</div>
+                                <ul>
+                                  {% for para in p.paraphrases_en %}
+                                    <li class="small">{{ para }}</li>
+                                  {% endfor %}
+                                </ul>
+                              {% endif %}
+                            </div>
+                          {% endif %}
+                        </li>
+                      {% empty %}
+                        <li class="text-muted small">{% trans "No easy phrases available." %}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+
+                  <div class="difficulty-section" data-diff="medium" style="display:none">
+                    <h6>{% if LANGUAGE_CODE == 'es' %}{{ lesson_struct.labels.phrases_es|default:'Frases' }}{% else %}{{ lesson_struct.labels.phrases_en|default:'Phrases' }}{% endif %} - {% if LANGUAGE_CODE == 'es' %}{{ lesson_struct.labels.difficulty_es.medium }}{% else %}{{ lesson_struct.labels.difficulty_en.medium }}{% endif %}</h6>
+                    <ul>
+                      {% for p in lesson_struct.phrases_by_difficulty.medium %}
+                        <li class="bilingual-item">
+                          {% if LANGUAGE_CODE == 'es' %}
+                            <button type="button" class="bilingual-toggle btn btn-link p-0 text-start" aria-expanded="false" aria-controls="phrase-diff-m-{{ forloop.counter0 }}">
+                              <div class="d-flex align-items-center"><div class="bilingual-compact">ES: {{ p.es }}</div><i class="bi bi-caret-down-fill caret ms-2"></i></div>
+                            </button>
+                            <div id="phrase-diff-m-{{ forloop.counter0 }}" class="bilingual-expanded mt-2" aria-hidden="true">
+                              <div class="row"><div class="col-12"><strong>EN</strong>: {{ p.en }}</div></div>
+                              {% if p.paraphrases_en %}
+                                <div class="mt-2 small text-muted">{{ lesson_struct.labels.paraphrases_es }}:</div>
+                                <ul>
+                                  {% for para in p.paraphrases_en %}
+                                    <li class="small">{{ para }}</li>
+                                  {% endfor %}
+                                </ul>
+                              {% endif %}
+                            </div>
+                          {% else %}
+                            <button type="button" class="bilingual-toggle btn btn-link p-0 text-start" aria-expanded="false" aria-controls="phrase-diff-m-{{ forloop.counter0 }}">
+                              <div class="d-flex align-items-center"><div class="bilingual-compact">EN: {{ p.en }}</div><i class="bi bi-caret-down-fill caret ms-2"></i></div>
+                            </button>
+                            <div id="phrase-diff-m-{{ forloop.counter0 }}" class="bilingual-expanded mt-2" aria-hidden="true">
+                              <div class="row"><div class="col-12"><strong>ES</strong>: {{ p.es }}</div></div>
+                              {% if p.paraphrases_en %}
+                                <div class="mt-2 small text-muted">{{ lesson_struct.labels.paraphrases_en }}:</div>
+                                <ul>
+                                  {% for para in p.paraphrases_en %}
+                                    <li class="small">{{ para }}</li>
+                                  {% endfor %}
+                                </ul>
+                              {% endif %}
+                            </div>
+                          {% endif %}
+                        </li>
+                      {% empty %}
+                        <li class="text-muted small">{% trans "No medium phrases available." %}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+
+                  <div class="difficulty-section" data-diff="hard" style="display:none">
+                    <h6>{% if LANGUAGE_CODE == 'es' %}{{ lesson_struct.labels.phrases_es|default:'Frases' }}{% else %}{{ lesson_struct.labels.phrases_en|default:'Phrases' }}{% endif %} - {% if LANGUAGE_CODE == 'es' %}{{ lesson_struct.labels.difficulty_es.hard }}{% else %}{{ lesson_struct.labels.difficulty_en.hard }}{% endif %}</h6>
+                    <ul>
+                      {% for p in lesson_struct.phrases_by_difficulty.hard %}
+                        <li class="bilingual-item">
+                          {% if LANGUAGE_CODE == 'es' %}
+                            <button type="button" class="bilingual-toggle btn btn-link p-0 text-start" aria-expanded="false" aria-controls="phrase-diff-h-{{ forloop.counter0 }}">
+                              <div class="d-flex align-items-center"><div class="bilingual-compact">ES: {{ p.es }}</div><i class="bi bi-caret-down-fill caret ms-2"></i></div>
+                            </button>
+                            <div id="phrase-diff-h-{{ forloop.counter0 }}" class="bilingual-expanded mt-2" aria-hidden="true">
+                              <div class="row"><div class="col-12"><strong>EN</strong>: {{ p.en }}</div></div>
+                              {% if p.paraphrases_en %}
+                                <div class="mt-2 small text-muted">{{ lesson_struct.labels.paraphrases_es }}:</div>
+                                <ul>
+                                  {% for para in p.paraphrases_en %}
+                                    <li class="small">{{ para }}</li>
+                                  {% endfor %}
+                                </ul>
+                              {% endif %}
+                            </div>
+                          {% else %}
+                            <button type="button" class="bilingual-toggle btn btn-link p-0 text-start" aria-expanded="false" aria-controls="phrase-diff-h-{{ forloop.counter0 }}">
+                              <div class="d-flex align-items-center"><div class="bilingual-compact">EN: {{ p.en }}</div><i class="bi bi-caret-down-fill caret ms-2"></i></div>
+                            </button>
+                            <div id="phrase-diff-h-{{ forloop.counter0 }}" class="bilingual-expanded mt-2" aria-hidden="true">
+                              <div class="row"><div class="col-12"><strong>ES</strong>: {{ p.es }}</div></div>
+                              {% if p.paraphrases_en %}
+                                <div class="mt-2 small text-muted">{{ lesson_struct.labels.paraphrases_en }}:</div>
+                                <ul>
+                                  {% for para in p.paraphrases_en %}
+                                    <li class="small">{{ para }}</li>
+                                  {% endfor %}
+                                </ul>
+                              {% endif %}
+                            </div>
+                          {% endif %}
+                        </li>
+                      {% empty %}
+                        <li class="text-muted small">{% trans "No hard phrases available." %}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+
+                  {# Examples grouped similarly, but include a Try the cloze button that reveals an input #}
+                  <div class="mt-4">
+                    <h6>{% if LANGUAGE_CODE == 'es' %}{{ lesson_struct.labels.examples_es|default:'Ejemplos' }}{% else %}{{ lesson_struct.labels.examples_en|default:'Examples' }}{% endif %}</h6>
+                    <div>
+                      {% for ex in lesson_struct.examples %}
+                        <div class="mb-3">
+                          {% if LANGUAGE_CODE == 'es' %}
+                            <div class="small text-muted">ES: {{ ex.es }}</div>
+                            <div class="mt-1"><strong>EN</strong>: {{ ex.en }}</div>
+                          {% else %}
+                            <div class="small text-muted">EN: {{ ex.en }}</div>
+                            <div class="mt-1"><strong>ES</strong>: {{ ex.es }}</div>
+                          {% endif %}
+                          {# Cloze hints removed intentionally across all difficulties and languages #}
+                        </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+
+                  <h6>{% if lesson_struct.mini_quiz_es and LANGUAGE_CODE == 'es' %}{{ lesson_struct.mini_quiz_es }}{% elif lesson_struct.mini_quiz_en %}{{ lesson_struct.mini_quiz_en }}{% else %}{% trans "Mini-quiz" %}{% endif %}</h6>
+                    <ol>
+                      {% for q in lesson_struct.quiz %}
+                        <li>
+                          {% if LANGUAGE_CODE == 'es' %}
+                            <div>{{ q.q_es }}</div>
+                            {% if q.choices_es %}
+                              <ul>
+                                {% for choice in q.choices_es %}
+                                  <li>{{ choice }}</li>
+                                {% endfor %}
+                              </ul>
+                            {% endif %}
+                            <button class="btn btn-sm btn-outline-info mt-1" onclick="this.nextElementSibling.style.display='block'">{% trans "Show Answer" %}</button>
+                            <!-- On Spanish page, reveal the English answer text -->
+                            <div class="mt-1" style="display:none">{{ q.answer_text_en }}</div>
+                          {% else %}
+                            <div>{{ q.q_en }}</div>
+                            {% if q.choices_en %}
+                              <ul>
+                                {% for choice in q.choices_en %}
+                                  <li>{{ choice }}</li>
+                                {% endfor %}
+                              </ul>
+                            {% endif %}
+                            <button class="btn btn-sm btn-outline-info mt-1" onclick="this.nextElementSibling.style.display='block'">{% trans "Show Answer" %}</button>
+                            <!-- On English page, reveal the Spanish answer text -->
+                            <div class="mt-1" style="display:none">{{ q.answer_text_es }}</div>
+                          {% endif %}
+                        </li>
+                      {% endfor %}
+                    </ol>
+                </div>
+              </div>
+              <!-- actions intentionally omitted -->
+              {% elif lesson_output %}
+              <div class="translation-result p-3 rounded bg-light">
+                <p class="fs-5 mb-0" style="white-space: pre-line">
+                  {{ lesson_output|safe }}
+                </p>
+              </div>
+              <!-- actions intentionally omitted -->
+              {% else %}
+              <p class="text-muted mb-0">
+                {% trans "Your lesson will appear here after you start." %}
+              </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_body_class %}learn-page{% endblock %}
+
+{% block page_background %}
+<div class="background-wrapper" style="background: url('{% static "backgrounds/learn.jpg" %}') no-repeat center center fixed; background-size: cover;">
+  <div class="bg-overlay" style="background-color: var(--white-soft); min-height: 100vh;">
+{% endblock %}
+
+{% block end_background %}
+  </div>
+</div>
+{% endblock %}
