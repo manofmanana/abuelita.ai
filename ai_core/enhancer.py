@@ -15,6 +15,7 @@ basic heuristics (pluralization and simple morphological variants).
 from typing import List
 import logging
 import re
+import unicodedata
 
 logger = logging.getLogger(__name__)
 
@@ -234,33 +235,41 @@ def phoneticize(text: str, lang: str = 'es') -> str:
     s = text
     try:
         if lang and lang.startswith('es'):
-            # lowercase and apply simple Spanish pronunciation rules
+            # Normalize and remove diacritics to make phonetic rules simpler
+            s = unicodedata.normalize('NFD', s)
+            s = ''.join(ch for ch in s if unicodedata.category(ch) != 'Mn')
             s = s.lower()
+            # Apply conservative Spanish pronunciation approximations
             s = s.replace('ll', 'y')
             s = s.replace('ch', 'ch')
             s = s.replace('qu', 'k')
             s = s.replace('gue', 'ge').replace('gui', 'gi')
             s = s.replace('güe', 'gwe').replace('güi', 'gwi')
             s = s.replace('j', 'h')
+            # drop silent h
             s = s.replace('h', '')
             s = s.replace('ñ', 'ny')
-            s = s.replace('c', 'k')
-            # c before e/i should sound like 's' for Latin American
-            s = re.sub(r'k(?=[ei])', 's', s)
+            # handle c before e/i -> s, else k
+            s = re.sub(r'c(?=[ei])', 's', s)
+            s = re.sub(r'c', 'k', s)
             s = s.replace('z', 's')
             s = s.replace('v', 'b')
-            # simple vowel emphasis spacing
+            # remove punctuation and digits
+            s = re.sub(r'[^a-z\s]', ' ', s)
+            # insert simple spacing between phonetic chunks (vowels and consonants)
             s = re.sub(r'([aeiou])', r'\1 ', s)
             s = re.sub(r'\s+', ' ', s).strip()
             return s
         else:
-            # naive english hint: separate common digraphs and add spacing
+            # naive english hint: normalize accents, separate common digraphs
+            s = unicodedata.normalize('NFD', s)
+            s = ''.join(ch for ch in s if unicodedata.category(ch) != 'Mn')
             s = s.lower()
-            s = s.replace('th', 'th')
             s = s.replace('ough', 'off')
             s = s.replace('ph', 'f')
             s = s.replace('sh', 'sh')
             s = s.replace('ch', 'ch')
+            s = re.sub(r'[^a-z\s]', ' ', s)
             s = re.sub(r'([aeiou])', r'\1 ', s)
             s = re.sub(r'\s+', ' ', s).strip()
             return s

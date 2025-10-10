@@ -145,6 +145,35 @@ def _normalize_topic(topic: str) -> dict:
     }
 
 
+def _sanitize_plural(singular: str, plural: str) -> str:
+    """Conservative plural cleanup: avoid awkward 'legoes' style forms.
+
+    If plural looks like it was formed by naive 'es' on an 'o' ending,
+    convert 'oes' -> 'os' (e.g. 'legoes' -> 'legos'). This is a small,
+    conservative heuristic to improve readability.
+    """
+    # If inflect is available, prefer its pluralization for irregulars
+    try:
+        if inflect:
+            p_engine = inflect.engine()
+            auto = p_engine.plural_noun(singular) or plural
+            if auto:
+                # If inflect suggests a form like 'legoes' for 'lego',
+                # normalize to 'legos' for readability.
+                if singular and singular.lower().endswith('o') and auto.lower().endswith('oes'):
+                    return auto[:-3] + 'os'
+                return auto
+    except Exception:
+        pass
+    # Fallback conservative rule: convert 'legoes'->'legos' style errors
+    if singular and singular.lower().endswith('o') and plural.lower().endswith('oes'):
+        return plural[:-3] + 'os'
+    # handle child->children naive cases if someone passed them in
+    if singular.lower() == 'child' and plural.lower() in {'childs', 'childes'}:
+        return 'children'
+    return plural
+
+
 def _analyze_topic_pos(topic: str) -> str:
     """Return a guessed POS tag for the topic: 'noun', 'verb', or 'adj'.
 
@@ -223,24 +252,30 @@ def _make_examples(topic: str) -> List[str]:
     singular = info['singular']
     plural = info['plural']
     is_countable = info['is_countable']
-
+    # Build a small, pedagogical set of examples ordered from Easy -> Medium -> Hard
     examples = []
     if pos == 'verb':
+        # Easy: simple present/factual
+        examples.append(f"I {singular} every day.")
+        # Medium: past/simple conversation
         examples.append(f"Yesterday I {singular} with my friend.")
-        examples.append(f"I like to {singular} when I have free time.")
-        examples.append(f"Do you {singular} often?")
+        # Hard: question/conditional
+        examples.append(f"How would you {singular} if you had more time?")
     elif pos == 'adj':
-        examples.append(f"This dish is very {singular}.")
+        examples.append(f"This is very {singular}.")
         examples.append(f"She seems {singular} today.")
-        examples.append(f"It was a {singular} moment.")
+        examples.append(f"It was a {singular} moment that I won't forget.")
     else:
+        # For nouns, pick clear examples using singular and plural forms
+        clean_plural = _sanitize_plural(singular, plural)
+        # Easy: simple observation using plural if countable
         if is_countable:
-            examples.append(f"When I visit the market I see many {plural}.")
+            examples.append(f"When I visit the market I see many {clean_plural}.")
             examples.append(f"My friend built a small model of {singular} yesterday.")
-            examples.append(f"Children often play with {plural} in the afternoon.")
+            examples.append(f"Children often play with {clean_plural} in the afternoon.")
         else:
             examples.append(f"When I visit the market I learn about {safe}.")
-            examples.append(f"People often talk about {safe} at gatherings.")
+            examples.append(f"People often talk about {safe} at family gatherings.")
             examples.append(f"I recently read a short story about {safe}.")
 
     return examples
@@ -338,14 +373,51 @@ def generate_lesson(topic: str, as_struct: bool = False):
     if not any(topic.lower() in s.lower() for s in sentences):
         sentences.insert(0, f"Let's learn about {topic} today.")
 
+    # Deduplicate sentences while preserving order
+    seen = set()
+    deduped_sentences = []
+    for s in sentences:
+        if s and s not in seen:
+            deduped_sentences.append(s)
+            seen.add(s)
+    sentences = deduped_sentences
+
     try:
         # Collect all unique texts we will translate so each distinct string is
         # translated exactly once. This eliminates redundant network calls and
         # speeds up generation substantially. Translate in parallel to reduce
         # wall-clock time when the translator is network-bound.
         examples_en = _make_examples(topic)
+        # deduplicate examples (preserve order)
+        seen_ex = set()
+        deduped_examples = []
+        for ex in examples_en:
+            if ex and ex not in seen_ex:
+                deduped_examples.append(ex)
+                seen_ex.add(ex)
+        examples_en = deduped_examples
         quiz_texts = [f"I like {topic}.", f"Where can I find {topic}?"]
-        texts_to_translate = set(sentences) | set(examples_en) | set(quiz_texts) | {topic}
+        # sanitize plural for quiz display if necessary and pick phrasing
+        norm = _normalize_topic(topic)
+        clean_plural = _sanitize_plural(norm.get('singular', topic), norm.get('plural', topic))
+        if norm.get('is_countable'):
+            quiz_texts = [f"I like {clean_plural}.", f"Where can I find {clean_plural}?"]
+        else:
+            # use singular/topic phrasing for non-countable topics
+            quiz_texts = [f"I like {norm.get('singular', topic)}.", f"Where can I find {norm.get('singular', topic)}?"]
+        # preserve order and deduplicate so behavior is deterministic across runs
+        texts_to_translate = []
+        for t in sentences:
+            if t and t not in texts_to_translate:
+                texts_to_translate.append(t)
+        for ex in examples_en:
+            if ex and ex not in texts_to_translate:
+                texts_to_translate.append(ex)
+        for q in quiz_texts:
+            if q and q not in texts_to_translate:
+                texts_to_translate.append(q)
+        if topic and topic not in texts_to_translate:
+            texts_to_translate.append(topic)
 
         translations = {}
         # Use a single shared pool for translations/paraphrase/phoneticization to

@@ -1,5 +1,6 @@
 {% extends "translator/base.html" %}
 {% load i18n static %}
+{% get_current_language as LANGUAGE_CODE %}
 
 {% block title %}
   {% trans "About - Abuelita.ai" %}
@@ -24,9 +25,11 @@
           <span class="text-accent">{% trans "Francisca Martínez" %}</span>
         </h1>
         <p class="lead text-muted mx-auto" style="max-width: 720px;">
-          {% blocktrans %}
-          Abuelita.ai was created in honor of my grandmother, who inspired this project with her strength, curiosity, and love for learning, so no abuela ever has to wait to understand the world again.
-          {% endblocktrans %}
+          {% if LANGUAGE_CODE == 'es' %}
+            Abuelita.ai fue creado en honor a mi abuela, quien inspiró este proyecto con su fortaleza, curiosidad y amor por el aprendizaje, para que ninguna abuela tenga que esperar para entender el mundo otra vez.
+          {% else %}
+            Abuelita.ai was created in honor of my grandmother, who inspired this project with her strength, curiosity, and love for learning, so no abuela ever has to wait to understand the world again.
+          {% endif %}
         </p>
       </div>
     </section>
@@ -47,14 +50,18 @@
               <i class="bi bi-heart-fill text-accent"></i> {% trans "Her Story" %}
             </h2>
             <p class="fs-5 text-dark">
-              {% blocktrans %}
-              Born in Nochistlán, Zacatecas, México, Francisca dedicated her life to her family and community. Moving to the U.S., she faced the challenge of learning a new language while preserving her Mexican roots.
-              {% endblocktrans %}
+              {% if LANGUAGE_CODE == 'es' %}
+                Nacida en Nochistlán, Zacatecas, México, Francisca dedicó su vida a su familia y comunidad. Al mudarse a los Estados Unidos, enfrentó el desafío de aprender un nuevo idioma mientras preservaba sus raíces mexicanas.
+              {% else %}
+                Born in Nochistlán, Zacatecas, México, Francisca dedicated her life to her family and community. Moving to the U.S., she faced the challenge of learning a new language while preserving her Mexican roots.
+              {% endif %}
             </p>
             <p class="text-muted">
-              {% blocktrans %}
-              She inspired the mission behind Abuelita.ai, blending technology with empathy, helping people communicate across generations and cultures.
-              {% endblocktrans %}
+              {% if LANGUAGE_CODE == 'es' %}
+                Ella inspiró la misión detrás de Abuelita.ai, combinando tecnología con empatía, ayudando a las personas a comunicarse a través de generaciones y culturas.
+              {% else %}
+                She inspired the mission behind Abuelita.ai, blending technology with empathy, helping people communicate across generations and cultures.
+              {% endif %}
             </p>
           </div>
         </div>
@@ -69,10 +76,12 @@
             <i class="bi bi-stars"></i> {% trans "Our Mission" %}
           </h2>
           <p class="text-muted mx-auto" style="max-width: 700px;">
-            {% blocktrans %}
-            To make learning languages feel like sitting at your grandmother’s table — warm, patient, and full of heart.
-            {% endblocktrans %}
-          </p>
+              {% if LANGUAGE_CODE == 'es' %}
+                Hacer que aprender idiomas se sienta como sentarse en la mesa de tu abuela — cálido, paciente y lleno de corazón.
+              {% else %}
+                To make learning languages feel like sitting at your grandmother’s table — warm, patient, and full of heart.
+              {% endif %}
+            </p>
         </div>
 
         <div class="row g-4">

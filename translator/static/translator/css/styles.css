@@ -115,13 +115,34 @@ h1, h2, h3, h4, h5, h6 {
 
 .nav-link {
   font-weight: 500;
-  border-radius: 20px;
-  margin: 0 5px;
-  transition: all 0.3s ease;
+  border-radius: 14px;
+  margin: 0 4px;
+  padding: 6px 10px;
+  transition: all 0.18s ease;
 }
 
-.nav-link:hover { background-color: rgba(255,255,255,0.1); }
-.nav-link.active { background-color: rgba(255,255,255,0.2); font-weight: 600; }
+.nav-link:hover { background-color: rgba(255,255,255,0.08); }
+.nav-link.active {
+  background-color: rgba(255,255,255,0.16);
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+/* On small screens, make the active highlight leaner so it doesn't overlap the language selector */
+@media (max-width: 576px) {
+  .nav-link {
+    margin: 0 2px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+  }
+  .nav-link.active {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background-color: rgba(255,255,255,0.12);
+  }
+}
 
 /* =========================
    HERO SECTION
@@ -167,11 +188,13 @@ h1, h2, h3, h4, h5, h6 {
 .photo-frame {
   width: 300px;
   height: 300px;
-  border: 8px solid var(--white-flag);
+  /* Use gradient as an outer frame: padding defines frame thickness */
+  padding: 8px;
   border-radius: 12px;
   box-shadow: 0 10px 34px -4px rgba(0,0,0,0.3);
   overflow: hidden;
-  background: linear-gradient(150deg, var(--green-flag) 0%, var(--green-flag-light) 45%, var(--red-flag) 100%);
+  /* gradient matches header/footer palette */
+  background: linear-gradient(135deg, var(--green-flag) 0%, var(--green-flag-light) 45%, var(--red-flag) 100%);
 }
 
 .photo-frame img {
@@ -180,6 +203,7 @@ h1, h2, h3, h4, h5, h6 {
   object-fit: cover;
   object-position: center center;
   border-radius: 8px;
+  /* keep a subtle inner white border so the photo pops against the gradient */
   border: 4px solid rgba(255,255,255,0.6);
   box-shadow: 0 6px 16px rgba(0,0,0,0.3);
   transition: transform 0.3s ease;
