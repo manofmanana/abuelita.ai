@@ -1,21 +1,15 @@
+# Core framework
 Django==5.0.4
-# Lightweight local ML and NLP libraries
-markovify
-scikit-learn
-gensim
-pandas
-matplotlib
-deep-translator
-nltk
-spacy
 
-# Utilities used by the project
+# Web server and static files
+gunicorn==21.2.0
+whitenoise==6.6.0
+
+# Utilities your templates and views use
 PyPDF2==3.0.1
 python-docx==1.1.0
 pyttsx3
 requests
 Pillow==10.2.0
-gunicorn==21.2.0
-whitenoise==6.6.0
 beautifulsoup4
 inflect
