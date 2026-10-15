@@ -17,13 +17,13 @@ class TranslationForm(forms.Form):
         choices=LANG_CHOICES,
         initial="en",
         label=_("From"),
-        widget=forms.Select(attrs={"class": "form-select form-select-lg"}),
+        widget=forms.Select(attrs={"class": "form-select form-select-lg lang-pair-select"}),
     )
     target_language = forms.ChoiceField(
         choices=LANG_CHOICES,
         initial="es",
         label=_("To"),
-        widget=forms.Select(attrs={"class": "form-select form-select-lg"}),
+        widget=forms.Select(attrs={"class": "form-select form-select-lg lang-pair-select"}),
     )
     file_upload = forms.FileField(
         required=False,

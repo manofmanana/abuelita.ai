@@ -4,10 +4,11 @@
 <form action="{% url 'set_language' %}" method="post" class="lang-form d-flex align-items-center gap-2">
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+  <i class="bi bi-globe2 text-white" aria-hidden="true"></i>
   <label class="visually-hidden" for="lang-select">{% trans "Language" %}</label>
   <select id="lang-select" name="language" class="form-select form-select-sm lang-select" data-autosubmit>
     {% for lang_code, lang_name in LANGUAGES %}
-    <option value="{{ lang_code }}" {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>{% if lang_code == 'en' %}🇺🇸{% else %}🇲🇽{% endif %} {{ lang_name }}</option>
+    <option value="{{ lang_code }}" {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>{{ lang_name }}</option>
     {% endfor %}
   </select>
   <noscript><button type="submit" class="btn btn-sm btn-light">{% trans "Go" %}</button></noscript>
