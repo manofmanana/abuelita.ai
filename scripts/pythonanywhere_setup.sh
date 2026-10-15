@@ -1,0 +1,172 @@
+#!/usr/bin/env bash
+# One-shot deploy/update for PythonAnywhere. Run it in a PythonAnywhere Bash console:
+#
+#   curl -sSLo ~/abuelita_setup.sh https://raw.githubusercontent.com/manofmanana/abuelita.ai/main/scripts/pythonanywhere_setup.sh && bash ~/abuelita_setup.sh
+#
+# It is safe to re-run: it pulls the latest code, reinstalls, migrates,
+# collects static files and reloads the site.
+#
+# To create/configure the web app automatically it needs an API token:
+# Account page -> "API Token" tab -> "Create a new API token" (then open a
+# new Bash console so $API_TOKEN is set). Without one, it prints the few
+# Web-tab settings to fill in by hand.
+set -euo pipefail
+
+REPO_URL="https://github.com/manofmanana/abuelita.ai.git"
+USER_NAME="${USER}"
+PROJECT_DIR="${HOME}/abuelita.ai"
+VENV_NAME="abuelita"
+VENV_DIR="${HOME}/.virtualenvs/${VENV_NAME}"
+DOMAIN="${USER_NAME}.pythonanywhere.com"
+WSGI_FILE="/var/www/${DOMAIN//./_}_wsgi.py"
+SECRET_FILE="${HOME}/.abuelita_secret_key"
+API_HOST="${PYTHONANYWHERE_DOMAIN:-pythonanywhere.com}"
+API="https://www.${API_HOST}/api/v0/user/${USER_NAME}"
+
+say() { printf '\n\033[1;32m==> %s\033[0m\n' "$*"; }
+warn() { printf '\n\033[1;33m!!  %s\033[0m\n' "$*"; }
+
+# ---------------------------------------------------------------- Python
+PYTHON_BIN=""
+for v in 3.13 3.12; do
+  if command -v "python${v}" >/dev/null 2>&1; then PYTHON_BIN="python${v}"; PY_VERSION="${v}"; break; fi
+done
+if [ -z "${PYTHON_BIN}" ]; then
+  warn "Python 3.12+ isn't available on this account's system image."
+  echo "Go to Account -> 'System image', pick the newest image, then run this script again."
+  exit 1
+fi
+say "Using ${PYTHON_BIN}"
+
+# ---------------------------------------------------------------- Code
+if [ -d "${PROJECT_DIR}/.git" ]; then
+  say "Updating code in ${PROJECT_DIR}"
+  git -C "${PROJECT_DIR}" fetch --quiet origin
+  git -C "${PROJECT_DIR}" reset --quiet --hard origin/main
+else
+  if [ -e "${PROJECT_DIR}" ]; then
+    backup="${PROJECT_DIR}.backup.$(date +%Y%m%d%H%M%S)"
+    warn "${PROJECT_DIR} exists but isn't a git clone; moving it to ${backup}"
+    mv "${PROJECT_DIR}" "${backup}"
+  fi
+  say "Cloning ${REPO_URL}"
+  git clone --quiet "${REPO_URL}" "${PROJECT_DIR}"
+fi
+cd "${PROJECT_DIR}"
+
+# ---------------------------------------------------------------- Virtualenv
+if [ ! -x "${VENV_DIR}/bin/python" ] || ! "${VENV_DIR}/bin/python" -c "import sys; sys.exit(sys.version_info < (3, 12))"; then
+  say "Creating virtualenv ${VENV_DIR}"
+  rm -rf "${VENV_DIR}"
+  "${PYTHON_BIN}" -m venv "${VENV_DIR}"
+fi
+say "Installing requirements"
+"${VENV_DIR}/bin/pip" install --quiet --upgrade pip
+"${VENV_DIR}/bin/pip" install --quiet -r requirements.txt
+
+# ---------------------------------------------------------------- Settings
+if [ ! -s "${SECRET_FILE}" ]; then
+  "${VENV_DIR}/bin/python" -c "import secrets; print(secrets.token_urlsafe(50))" > "${SECRET_FILE}"
+  chmod 600 "${SECRET_FILE}"
+fi
+export DJANGO_SECRET_KEY="$(cat "${SECRET_FILE}")"
+export DJANGO_ALLOWED_HOSTS="${DOMAIN}"
+
+say "Migrating database and collecting static files"
+"${VENV_DIR}/bin/python" manage.py migrate --noinput
+"${VENV_DIR}/bin/python" manage.py collectstatic --noinput -v0
+"${VENV_DIR}/bin/python" manage.py check
+
+# ---------------------------------------------------------------- Web app (API)
+api() {  # api METHOD PATH [curl args...]
+  local method="$1" path="$2"; shift 2
+  curl -sS -o /tmp/abuelita_api.out -w '%{http_code}' -X "${method}" \
+    -H "Authorization: Token ${API_TOKEN}" "${API}${path}" "$@"
+}
+
+configured_by_api=0
+if [ -n "${API_TOKEN:-}" ]; then
+  say "Configuring web app ${DOMAIN} via the PythonAnywhere API"
+  code=$(api GET "/webapps/${DOMAIN}/")
+  if [ "${code}" = "404" ]; then
+    code=$(api POST "/webapps/" --data-urlencode "domain_name=${DOMAIN}" --data-urlencode "python_version=python${PY_VERSION//./}")
+    if [ "${code}" != "201" ]; then
+      warn "Couldn't create the web app (HTTP ${code}): $(cat /tmp/abuelita_api.out)"
+      echo "Free accounts get one web app; if you already have one under another name, delete or reuse it on the Web tab."
+      exit 1
+    fi
+  fi
+  api PATCH "/webapps/${DOMAIN}/" \
+    --data-urlencode "virtualenv_path=${VENV_DIR}" \
+    --data-urlencode "source_directory=${PROJECT_DIR}" \
+    --data-urlencode "force_https=true" >/dev/null || true
+
+  # Static files mapping (/static/ -> staticfiles/), created once.
+  api GET "/webapps/${DOMAIN}/static_files/" >/dev/null || true
+  if ! grep -q '"url": *"/static/"' /tmp/abuelita_api.out; then
+    api POST "/webapps/${DOMAIN}/static_files/" \
+      --data-urlencode "url=/static/" --data-urlencode "path=${PROJECT_DIR}/staticfiles" >/dev/null
+  fi
+  configured_by_api=1
+fi
+
+# ---------------------------------------------------------------- WSGI file
+if [ -w "$(dirname "${WSGI_FILE}")" ]; then
+  say "Writing ${WSGI_FILE}"
+  cat > "${WSGI_FILE}" <<WSGI
+# Generated by abuelita.ai scripts/pythonanywhere_setup.sh
+import os
+import sys
+
+path = "${PROJECT_DIR}"
+if path not in sys.path:
+    sys.path.insert(0, path)
+
+with open("${SECRET_FILE}") as f:
+    os.environ["DJANGO_SECRET_KEY"] = f.read().strip()
+os.environ["DJANGO_SETTINGS_MODULE"] = "abuelita_ai.settings"
+os.environ["DJANGO_ALLOWED_HOSTS"] = "${DOMAIN}"
+os.environ["DJANGO_CSRF_TRUSTED_ORIGINS"] = "https://${DOMAIN}"
+
+from django.core.wsgi import get_wsgi_application
+
+application = get_wsgi_application()
+WSGI
+fi
+
+# ---------------------------------------------------------------- Reload
+if [ "${configured_by_api}" = "1" ]; then
+  code=$(api POST "/webapps/${DOMAIN}/reload/")
+  [ "${code}" = "200" ] && say "Reloaded https://${DOMAIN}/" || warn "Reload returned HTTP ${code}: $(cat /tmp/abuelita_api.out)"
+else
+  touch "${WSGI_FILE}" 2>/dev/null || true
+  warn "No API token found, so finish these settings on the Web tab:"
+  cat <<STEPS
+   1. "Add a new web app" -> Manual configuration -> Python ${PY_VERSION}   (skip if it exists)
+   2. Virtualenv:    ${VENV_DIR}
+   3. Static files:  URL /static/   Directory ${PROJECT_DIR}/staticfiles
+   4. WSGI file:     replace its contents with ${WSGI_FILE} as written above
+                     (if it didn't exist yet, re-run this script after step 1)
+   5. Click the green "Reload" button
+STEPS
+fi
+
+# ---------------------------------------------------------------- Smoke test
+say "Checking translation service reachability"
+if "${VENV_DIR}/bin/python" - <<'PY'
+from ai_core.translator import translate
+print("  ", translate("Good morning, grandma", "en", "es"))
+PY
+then
+  echo "   Translation works."
+else
+  warn "Translation failed from this account. Free accounts can only reach allow-listed sites;"
+  echo "   ask PythonAnywhere support to allow translate.googleapis.com, or upgrade the account."
+fi
+
+if [ "${configured_by_api}" = "1" ]; then
+  sleep 3
+  status=$(curl -s -o /dev/null -w '%{http_code}' "https://${DOMAIN}/en/health/" || true)
+  say "https://${DOMAIN}/en/health/ -> HTTP ${status}"
+  [ "${status}" = "200" ] && echo "   Done! Open https://${DOMAIN}/" || echo "   Check the Error log on the Web tab and send the last lines over."
+fi

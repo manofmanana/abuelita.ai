@@ -106,7 +106,13 @@ docker run -p 8000:8000 -e DJANGO_SECRET_KEY=change-me -e DJANGO_ALLOWED_HOSTS=l
 
 **Render / Railway / Heroku-style hosts**: the `Procfile` runs migrations on release and starts Gunicorn. Set `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS`, and run `python manage.py collectstatic --noinput` in the build step.
 
-**PythonAnywhere**: point the WSGI file at `abuelita_ai.wsgi`, set the environment variables above, run `collectstatic`, and map `/static/` to the `staticfiles/` directory.
+**PythonAnywhere**: open a Bash console and run
+
+```bash
+curl -sSLo ~/abuelita_setup.sh https://raw.githubusercontent.com/manofmanana/abuelita.ai/main/scripts/pythonanywhere_setup.sh && bash ~/abuelita_setup.sh
+```
+
+It clones or updates the code, builds a Python 3.12+ virtualenv, migrates, runs `collectstatic`, generates a secret key, writes the WSGI file and reloads the site. Create an API token first (Account → API Token) and the script also creates and configures the web app; without one it prints the few Web-tab settings to fill in by hand. Re-run the same command to deploy updates.
 
 ## Project structure
 
