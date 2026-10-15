@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class Translation(models.Model):
     source_language = models.CharField(max_length=10)
     target_language = models.CharField(max_length=10)
@@ -15,7 +16,7 @@ class Translation(models.Model):
 class Lesson(models.Model):
     title = models.CharField(max_length=200, blank=True)
     content = models.TextField()
-    language = models.CharField(max_length=10, default='es')
+    language = models.CharField(max_length=10, default="es")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -23,8 +24,8 @@ class Lesson(models.Model):
 
 
 class Progress(models.Model):
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='progress')
-    user_id = models.CharField(max_length=100, default='local')
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="progress")
+    user_id = models.CharField(max_length=100, default="local")
     score = models.FloatField(default=0.0)
     completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

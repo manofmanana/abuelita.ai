@@ -1,248 +1,164 @@
-import os
-from django.shortcuts import render
-from deep_translator import GoogleTranslator
-from PyPDF2 import PdfReader
-from docx import Document
-from .forms import TranslationForm
-from django.http import JsonResponse, FileResponse, Http404
-import uuid
-import tempfile
-from pathlib import Path
-from .models import Lesson
 import logging
+import uuid
+from pathlib import Path
+
+from django.conf import settings
+from django.http import Http404, HttpResponse, JsonResponse
+from django.shortcuts import render
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils.http import content_disposition_header
+from django.utils.translation import gettext as _
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
+
+from ai_core import TranslationError, generate_lesson, lesson_to_text, recommend_similar, translate
+
+from .documents import DocumentError, extract_text
+from .forms import TranslationForm
+from .models import Lesson
 
 logger = logging.getLogger(__name__)
 
+# Translated documents are kept in the user's session (not on disk) so the
+# download link works across worker processes and nothing leaks on the server.
+SESSION_DOWNLOADS_KEY = "translated_files"
+MAX_SESSION_DOWNLOADS = 3
+LESSON_SUGGESTIONS = ["food", "travel", "toys", "family", "cook", "music"]
+
+
+def _is_ajax(request) -> bool:
+    return request.headers.get("x-requested-with") == "XMLHttpRequest"
+
+
+def _remember_download(request, original_name: str, text: str) -> str:
+    uid = uuid.uuid4().hex
+    downloads = request.session.get(SESSION_DOWNLOADS_KEY, {})
+    downloads[uid] = {"name": f"{Path(original_name).stem}_translated.txt", "text": text}
+    # Keep only the most recent few files.
+    request.session[SESSION_DOWNLOADS_KEY] = dict(list(downloads.items())[-MAX_SESSION_DOWNLOADS:])
+    return reverse("translator:download_translated", args=[uid])
+
+
+@require_http_methods(["GET", "POST"])
 def home(request):
-    translation_result = None
-    download_url = None
-    if request.method == "POST":
-        form = TranslationForm(request.POST, request.FILES)
-        if form.is_valid():
-            from django.utils.translation import gettext as _
-            src = form.cleaned_data["source_language"]
-            tgt = form.cleaned_data["target_language"]
-            text_input = form.cleaned_data["text_input"]
-            uploaded_file = form.cleaned_data["file_upload"]
+    context = {"form": TranslationForm()}
+    if request.method == "GET":
+        return render(request, "translator/index.html", context)
 
-            if src == tgt:
-                translation_result = _("Please choose two different languages.")
-                return render(request, "translator/index.html", {"form": form, "translation_result": translation_result})
-
-            content = ""
-            # Handle file uploads
-            if uploaded_file:
-                ext = os.path.splitext(uploaded_file.name)[1].lower()
-                try:
-                    if ext == ".txt":
-                        content = uploaded_file.read().decode("utf-8")
-                    elif ext == ".pdf":
-                        reader = PdfReader(uploaded_file)
-                        content = "\n".join([page.extract_text() for page in reader.pages if page.extract_text()])
-                    elif ext == ".docx":
-                        doc = Document(uploaded_file)
-                        content = "\n".join([p.text for p in doc.paragraphs])
-                    else:
-                        translation_result = _("Unsupported file type.")
-                except Exception as e:
-                    translation_result = _("Error reading file: ") + str(e)
-            else:
-                content = text_input.strip()
-
-            # Perform translation
-            if content:
-                try:
-                    # Attempt translation using the client-provided source/target.
-                    translator = GoogleTranslator(source=src, target=tgt)
-                    translation_result = translator.translate(content)
-                    # If the translation is identical to the input (common when
-                    # the provided source language is wrong), retry with auto
-                    # language detection. This is a conservative fallback that
-                    # helps mobile users who may accidentally have the source
-                    # set incorrectly.
-                    try:
-                        if translation_result and content and translation_result.strip().lower() == content.strip().lower() and src != 'auto':
-                            auto_translator = GoogleTranslator(source='auto', target=tgt)
-                            alt = auto_translator.translate(content)
-                            if alt and alt.strip().lower() != content.strip().lower():
-                                translation_result = alt
-                    except Exception:
-                        # If auto-detect retry fails for any reason, stick with original result
-                        pass
-                    # If user uploaded a file, write translated text to a temp file
-                    # and provide a download URL so the user can retrieve it.
-                    if uploaded_file:
-                        try:
-                            uid = str(uuid.uuid4())
-                            # Preserve original filename base and use .txt for translated output
-                            orig_name = Path(uploaded_file.name).stem
-                            out_name = f"{orig_name}_translated.txt"
-                            tmp = tempfile.NamedTemporaryFile(delete=False, prefix=f"translated_{uid}_", suffix='.txt')
-                            tmp.write(translation_result.encode('utf-8'))
-                            tmp.flush()
-                            tmp.close()
-                            # store mapping in module-level dict for retrieval
-                            try:
-                                TRANSLATED_FILES
-                            except NameError:
-                                TRANSLATED_FILES = {}
-                            TRANSLATED_FILES[uid] = {'path': tmp.name, 'name': out_name}
-                            from django.urls import reverse
-                            download_url = reverse('translator:download_translated', args=[uid])
-                        except Exception:
-                            download_url = None
-                except Exception as e:
-                    translation_result = _("Translation error: ") + str(e)
-            else:
-                translation_result = _("Please enter or upload text to translate.")
+    form = TranslationForm(request.POST, request.FILES)
+    context["form"] = form
+    error = None
+    if not form.is_valid():
+        error = " ".join(msg for msgs in form.errors.values() for msg in msgs)
     else:
-        form = TranslationForm()
+        data = form.cleaned_data
+        uploaded = data["file_upload"]
+        try:
+            content = extract_text(uploaded) if uploaded else data["text_input"]
+            content = content.strip()
+            if not content:
+                raise DocumentError(_("We couldn't find any text to translate."))
 
-    return render(request, "translator/index.html", {"form": form, "translation_result": translation_result, "download_url": download_url})
+            limit = settings.ABUELITA_MAX_TRANSLATE_CHARS
+            truncated = len(content) > limit
+            content = content[:limit]
+
+            source, target = data["source_language"], data["target_language"]
+            result = translate(content, source, target)
+            # Output identical to the input means the text was already in the
+            # target language (e.g. Spanish typed with "From: English"). The
+            # user almost certainly wants the other direction, so flip it.
+            if result.strip().lower() == content.lower():
+                flipped = translate(content, "auto", source)
+                if flipped and flipped.strip().lower() != content.lower():
+                    result, target = flipped, source
+
+            context.update(
+                translation_result=result,
+                target_language=target,
+                truncated=truncated,
+                download_url=_remember_download(request, uploaded.name, result) if uploaded else None,
+            )
+        except DocumentError as exc:
+            error = str(exc)
+        except TranslationError:
+            error = _("The translation service is unavailable right now. Please try again in a moment.")
+
+    context["error"] = error
+    if _is_ajax(request):
+        if error:
+            return JsonResponse({"ok": False, "error": error}, status=400)
+        return JsonResponse(
+            {
+                "ok": True,
+                "translation_result": context["translation_result"],
+                "target_language": context["target_language"],
+                "download_url": context["download_url"],
+                "truncated": context["truncated"],
+            }
+        )
+    return render(request, "translator/index.html", context, status=400 if error else 200)
 
 
+@require_GET
 def download_translated(request, uid):
-    """Serve a previously-generated translated file stored in a temp file.
-
-    This uses an in-memory mapping of uid -> temp file path created when the
-    translation was performed. It's intentionally simple for demo/testing and
-    not intended as a production storage strategy.
-    """
-    try:
-        TRANSLATED_FILES
-    except NameError:
-        TRANSLATED_FILES = {}
-    info = TRANSLATED_FILES.get(str(uid))
+    info = request.session.get(SESSION_DOWNLOADS_KEY, {}).get(uid)
     if not info:
         raise Http404("Translated file not found")
-    path = info.get('path')
-    name = info.get('name')
-    try:
-        return FileResponse(open(path, 'rb'), as_attachment=True, filename=name)
-    except Exception:
-        raise Http404("Could not open translated file")
+    response = HttpResponse(info["text"], content_type="text/plain; charset=utf-8")
+    response["Content-Disposition"] = content_disposition_header(as_attachment=True, filename=info["name"])
+    return response
 
+
+@require_http_methods(["GET", "POST"])
 def learn(request):
-    lesson_output = None
-    lesson_struct = None
-    if request.method == "POST":
-        prompt = request.POST.get("input_text", "").strip()
-        if prompt:
-            try:
-                # Request structured lesson data so templates can render EN/ES separately
-                # Lazy import AI helpers to avoid import-time side effects during test collection
-                from ai_core import generate_lesson, _build_lesson_from_sentences
-                lesson_struct = generate_lesson(prompt, as_struct=True)
-                # Build a simple text rendering for older code paths by extracting
-                # the English phrases from the structured output.
-                phrases_en = [p.get("en") for p in lesson_struct.get("phrases", []) if isinstance(p, dict) and p.get("en")]
-                lesson_output = _build_lesson_from_sentences(prompt, phrases_en)
+    # GET ?topic=... makes lessons linkable; POST keeps the classic form flow.
+    topic = (request.POST.get("input_text") if request.method == "POST" else request.GET.get("topic")) or ""
+    topic = topic.strip()
+    lesson_struct = generate_lesson(topic, as_struct=True) if topic else None
 
-                # If this is an AJAX request, return JSON so the frontend can update
-                if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
-                    return JsonResponse({"ok": True, "lesson_struct": lesson_struct, "lesson_output": lesson_output})
-            except Exception as e:
-                # Safety: never crash the view if AI backend fails
-                lesson_output = f"[error generating lesson] {e}"
-    return render(request, "translator/learn.html", {"lesson_output": lesson_output, "lesson_struct": lesson_struct})
+    if lesson_struct and _is_ajax(request):
+        # The rendered fragment lets the page swap in the lesson without
+        # duplicating the template in JavaScript.
+        html = render_to_string("translator/partials/lesson.html", {"lesson_struct": lesson_struct}, request=request)
+        return JsonResponse(
+            {
+                "ok": True,
+                "lesson_struct": lesson_struct,
+                "lesson_output": lesson_to_text(lesson_struct),
+                "html": html,
+            }
+        )
+    return render(
+        request,
+        "translator/learn.html",
+        {"lesson_struct": lesson_struct, "topic": topic, "suggestions": LESSON_SUGGESTIONS},
+    )
 
-# Culture page removed per product decision.
 
 def about(request):
     return render(request, "translator/about.html")
 
 
-def save_lesson(request):
-    if request.method != 'POST':
-        return JsonResponse({'error': 'POST required'}, status=405)
-    title = request.POST.get('title') or ''
-    content = request.POST.get('content') or ''
-    lang = request.POST.get('language') or 'es'
-    if not content:
-        return JsonResponse({'error': 'content required'}, status=400)
-    l = Lesson.objects.create(title=title, content=content, language=lang)
-    return JsonResponse({'ok': True, 'id': l.id})
-
-
-def recommend(request):
-    if request.method != 'POST':
-        return JsonResponse({'error': 'POST required'}, status=405)
-    content = request.POST.get('content') or ''
-    # For demo, build a small corpus from recent lessons
-    corpus = [l.content for l in Lesson.objects.all().order_by('-created_at')[:50]]
-    try:
-        # Lazy import the recommender helper to avoid import-time heavy work
-        from ai_core import recommend_similar
-        recs = recommend_similar(content, corpus_texts=corpus, topn=3)
-        return JsonResponse({'ok': True, 'recommendations': recs})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-
-def clear_cookies(request):
-    """Development helper: clear the language cookie so you can test language switching.
-
-    Removes the `django_language` cookie and redirects back to the Referer or site root.
-    This is safe for development and doesn't modify server-side session data.
-    """
-    from django.shortcuts import redirect
-
-    next_url = request.META.get("HTTP_REFERER") or "/"
-    response = redirect(next_url)
-    # Remove django language cookie
-    response.delete_cookie("django_language")
-    return response
-
-from django.http import JsonResponse
-import pyttsx3
-import tempfile
-import os
-
 def health(request):
-    """Lightweight health endpoint used by tests.
-
-    Returns a predictable JSON payload that the test asserts on.
-    """
     return JsonResponse({"ok": True, "view": "health", "about_url": "/about/"})
 
-def speak_api(request):
-    """
-    Temporary speech endpoint — supports offline TTS with pyttsx3.
-    Future-ready for hybrid AI (like HuggingFace TTS or OpenAI).
-    """
-    if request.method == "POST":
-        text = request.POST.get("text", "").strip()
-        if not text:
-            return JsonResponse({"error": "No text provided"}, status=400)
 
-        try:
-            engine = pyttsx3.init()
-            # Set Spanish or English voice based on text language guess
-            if any(word in text.lower() for word in ["hola", "buenos", "gracias", "mañana"]):
-                # Try to use a Spanish voice if available
-                for voice in engine.getProperty("voices"):
-                    if "spanish" in voice.name.lower():
-                        engine.setProperty("voice", voice.id)
-                        break
-            else:
-                for voice in engine.getProperty("voices"):
-                    if "english" in voice.name.lower():
-                        engine.setProperty("voice", voice.id)
-                        break
-
-            # Save to temporary audio file
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp:
-                engine.save_to_file(text, tmp.name)
-                engine.runAndWait()
-                tmp_path = tmp.name
-
-            # Return just confirmation for now
-            return JsonResponse({"success": True, "message": "Speech generated locally."})
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
-
-    return JsonResponse({"error": "Invalid method"}, status=405)
-from .views_speak import speak_api
+@require_POST
+def save_lesson(request):
+    content = (request.POST.get("content") or "").strip()
+    if not content:
+        return JsonResponse({"error": "content required"}, status=400)
+    lesson = Lesson.objects.create(
+        title=(request.POST.get("title") or "")[:200],
+        content=content,
+        language=(request.POST.get("language") or "es")[:10],
+    )
+    return JsonResponse({"ok": True, "id": lesson.id})
 
 
-# Note: LMS and OOAPI integrations removed in favor of local ai_core-based features.
+@require_POST
+def recommend(request):
+    content = request.POST.get("content") or ""
+    corpus = list(Lesson.objects.order_by("-created_at").values_list("content", flat=True)[:50])
+    return JsonResponse({"ok": True, "recommendations": recommend_similar(content, corpus_texts=corpus, topn=3)})

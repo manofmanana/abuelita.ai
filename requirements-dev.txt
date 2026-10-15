@@ -1,5 +1,11 @@
-# Development / optional ML dependencies
-sentence-transformers
-transformers
-torch
-nltk
+# Development & test tools
+-r requirements.txt
+beautifulsoup4==4.15.0
+pytest==9.1.1
+pytest-django==4.14.0
+ruff==0.17.1
+
+# Optional NLP extras: richer paraphrases (WordNet) and part-of-speech detection.
+# The app works without them.
+# nltk
+# spacy

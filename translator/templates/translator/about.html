@@ -1,6 +1,5 @@
 {% extends "translator/base.html" %}
 {% load i18n static %}
-{% get_current_language as LANGUAGE_CODE %}
 
 {% block title %}
   {% trans "About - Abuelita.ai" %}
@@ -11,11 +10,11 @@
 {% block extra_body_class %}
   about-page
 {% endblock %}
+{% block page_bg_class %}
+  page-bg--about
+{% endblock %}
 
 {% block content %}
-<div class="background-wrapper"
-     style="background: url('{% static "backgrounds/rancho.jpg" %}') no-repeat center center fixed; background-size: cover;">
-  <div class="bg-overlay" style="background-color: rgba(255,255,255,0.55); min-height: 100vh;">
 
     <!-- Hero Section -->
     <section class="py-5 text-center text-dark">
@@ -40,8 +39,9 @@
         <div class="row align-items-center g-5">
           <div class="col-lg-6 text-center">
             <div class="photo-frame shadow mx-auto">
-              <img src="{% static "backgrounds/abuelita.jpg" %}"
+              <img src="{% static "backgrounds/abuelita.webp" %}"
                    alt="{% trans "Abuelita portrait" %}"
+                   width="800" height="1239" loading="lazy" decoding="async"
                    class="img-fluid abuelita-photo" />
             </div>
           </div>
@@ -91,7 +91,7 @@
                 <i class="bi bi-translate display-5 text-primary mb-3"></i>
                 <h5 class="fw-bold">{% trans "Empower Communication" %}</h5>
                 <p class="text-muted">
-                  {% blocktrans %}
+                  {% blocktrans trimmed %}
                   Breaking language barriers through translation and cultural connection.
                   {% endblocktrans %}
                 </p>
@@ -105,7 +105,7 @@
                 <i class="bi bi-heart display-5 text-accent mb-3"></i>
                 <h5 class="fw-bold">{% trans "Honor Heritage" %}</h5>
                 <p class="text-muted">
-                  {% blocktrans %}
+                  {% blocktrans trimmed %}
                   Preserving the wisdom, warmth, and voice of our elders in every interaction.
                   {% endblocktrans %}
                 </p>
@@ -119,7 +119,7 @@
                 <i class="bi bi-lightbulb display-5 text-warning mb-3"></i>
                 <h5 class="fw-bold">{% trans "Inspire Learning" %}</h5>
                 <p class="text-muted">
-                  {% blocktrans %}
+                  {% blocktrans trimmed %}
                   Encouraging curiosity and growth through bilingual education and AI tools.
                   {% endblocktrans %}
                 </p>
@@ -144,6 +144,4 @@
       </div>
     </section>
 
-  </div>
-</div>
 {% endblock %}

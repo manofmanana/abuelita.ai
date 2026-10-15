@@ -8,13 +8,12 @@ message extraction and often lead to missing translations at runtime.
 
 Exit code 0 if no issues found, 1 if any problematic tags are discovered.
 """
-from pathlib import Path
+
 import re
-import sys
-from typing import List, Tuple
+from pathlib import Path
 
 
-def find_multiline_trans_tags(root: Path) -> List[Tuple[str, str]]:
+def find_multiline_trans_tags(root: Path) -> list[tuple[str, str]]:
     """Return a list of (filepath, matched_snippet) for multi-line trans tags.
 
     We look for `{% trans` ... `%}` sequences and report those whose

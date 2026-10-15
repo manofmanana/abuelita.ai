@@ -2,6 +2,6 @@ from django.apps import AppConfig
 
 
 class TranslatorConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'translator'
-    verbose_name = 'Translation & Learning'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "translator"
+    verbose_name = "Translation & Learning"

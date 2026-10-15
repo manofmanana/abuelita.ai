@@ -1,7 +1,8 @@
-from django.test import SimpleTestCase
-from pathlib import Path
 import importlib.util
 import sys
+from pathlib import Path
+
+from django.test import SimpleTestCase
 
 
 class TransTagChecks(SimpleTestCase):

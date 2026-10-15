@@ -1,0 +1,77 @@
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+{% with s=lesson_struct labels=lesson_struct.labels %}
+<div class="translation-result lesson p-3 rounded bg-light">
+  {% if LANGUAGE_CODE == 'es' %}
+  <h3 class="h5 fw-semibold">{{ labels.topicLabel_es }}: {{ s.topic_es }}</h3>
+  <p class="mb-3 small text-muted">{{ labels.tipText_es }}</p>
+  {% else %}
+  <h3 class="h5 fw-semibold">{{ labels.topicLabel_en }}: {{ s.topic_en }}</h3>
+  <p class="mb-3 small text-muted">{{ labels.tipText_en }}</p>
+  {% endif %}
+
+  <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
+    <strong>{% if LANGUAGE_CODE == 'es' %}{{ labels.lesson_progression_es }}{% else %}{{ labels.lesson_progression_en }}{% endif %}:</strong>
+    <div class="btn-group" role="tablist" aria-label="{% trans 'Difficulty' %}">
+      {% for level in s.levels %}
+      <button type="button" role="tab" class="btn btn-sm difficulty-tab {% if level.key == labels.default_difficulty %}btn-secondary active{% else %}btn-outline-secondary{% endif %}" data-diff="{{ level.key }}" aria-selected="{% if level.key == labels.default_difficulty %}true{% else %}false{% endif %}">
+        {% if LANGUAGE_CODE == 'es' %}{{ level.label_es }}{% else %}{{ level.label_en }}{% endif %} <span class="badge text-bg-light">{{ level.phrases|length }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% for level in s.levels %}
+  <div class="difficulty-section" data-diff="{{ level.key }}" role="tabpanel" {% if level.key != labels.default_difficulty %}hidden{% endif %}>
+    <h4 class="h6">{% if LANGUAGE_CODE == 'es' %}{{ labels.phrases_es }} - {{ level.label_es }}{% else %}{{ labels.phrases_en }} - {{ level.label_en }}{% endif %}</h4>
+    <ul class="list-unstyled">
+      {% for p in level.phrases %}
+      <li class="bilingual-item">
+        {% include "translator/partials/bilingual_item.html" with item=p prefix="phrase-"|add:level.key index=forloop.counter0 %}
+      </li>
+      {% empty %}
+      <li class="text-muted small">{% trans "No phrases at this level — try another tab." %}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
+
+  {% if s.examples %}
+  <h4 class="h6 mt-4">{% if LANGUAGE_CODE == 'es' %}{{ labels.examples_es }}{% else %}{{ labels.examples_en }}{% endif %}</h4>
+  <ul class="list-unstyled">
+    {% for ex in s.examples %}
+    <li class="bilingual-item">
+      {% include "translator/partials/bilingual_item.html" with item=ex prefix="example" index=forloop.counter0 %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if s.quiz %}
+  <h4 class="h6 mt-4">{% if LANGUAGE_CODE == 'es' %}{{ s.mini_quiz_es }}{% else %}{{ s.mini_quiz_en }}{% endif %}</h4>
+  <ol class="quiz">
+    {% for q in s.quiz %}
+    <li class="mb-3">
+      {% if LANGUAGE_CODE == 'es' %}
+      {# Spanish speakers practise English: Spanish prompt, English choices/answer #}
+      <div>{{ q.q_es }}</div>
+      {% if q.choices_en %}<ol type="A" class="small">{% for c in q.choices_en %}<li>{{ c }}</li>{% endfor %}</ol>{% endif %}
+      <button type="button" class="btn btn-sm btn-outline-info mt-1 btn-show-answer" aria-expanded="false">{{ labels.showAnswer_es }}</button>
+      <div class="quiz-answer mt-1 fw-semibold" hidden lang="en">{{ q.answer_text_en }}</div>
+      {% else %}
+      {# English speakers practise Spanish: English prompt, Spanish choices/answer #}
+      <div>{{ q.q_en }}</div>
+      {% if q.choices_es %}<ol type="A" class="small">{% for c in q.choices_es %}<li lang="es">{{ c }}</li>{% endfor %}</ol>{% endif %}
+      <button type="button" class="btn btn-sm btn-outline-info mt-1 btn-show-answer" aria-expanded="false">{{ labels.showAnswer_en }}</button>
+      <div class="quiz-answer mt-1 fw-semibold" hidden lang="es">{{ q.answer_text_es }}</div>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+
+  <div class="d-flex flex-wrap gap-2 mt-3">
+    <a class="btn btn-sm btn-outline-secondary share-lesson" href="?topic={{ s.topic_en|urlencode }}"><i class="bi bi-link-45deg" aria-hidden="true"></i> {% trans "Link to this lesson" %}</a>
+  </div>
+</div>
+{% endwith %}

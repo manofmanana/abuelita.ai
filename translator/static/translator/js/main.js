@@ -1,538 +1,318 @@
-(function () {
-  document.addEventListener("DOMContentLoaded", function () {
-    const src = document.getElementById("id_source_language");
-    const tgt = document.getElementById("id_target_language");
-    const swapBtn = document.getElementById("swap-languages");
-    const copyBtn = document.querySelector(".copy-btn");
-    const listenBtn = document.querySelector(".listen-btn");
-    const outEl = document.getElementById("translation-output");
+/* Abuelita.ai front-end.
+ *
+ * Progressive enhancement: every form works without JavaScript. With JS we
+ * submit via fetch, show loading states, and add speech in/out.
+ */
+(() => {
+  "use strict";
 
-    // Swap languages
-    if (swapBtn && src && tgt) {
-      swapBtn.addEventListener("click", function () {
-        const srcVal = src.value;
-        src.value = tgt.value;
-        tgt.value = srcVal;
-      });
-    }
+  const LANG_TAGS = { en: "en-US", es: "es-MX" };
 
-    // Enforce sensible defaults: if source is 'en' then target should be 'es' and vice versa
-    function enforceLanguagePairing() {
-      if (!src || !tgt) return;
-      const s = String(src.value || '').toLowerCase();
-      const t = String(tgt.value || '').toLowerCase();
-      if (s === 'en' && t !== 'es') {
-        tgt.value = 'es';
-      } else if (s === 'es' && t !== 'en') {
-        tgt.value = 'en';
-      }
-    }
-    if (src && tgt) {
-      src.addEventListener('change', enforceLanguagePairing);
-      tgt.addEventListener('change', function () {
-        // If user changes target to same as source, flip intelligently
-        if (tgt.value === src.value) {
-          if (tgt.value === 'en') src.value = 'es'; else src.value = 'en';
-        }
-      });
-      // Run once on load to enforce sensible defaults
-      try { enforceLanguagePairing(); } catch (e) {}
-    }
+  // ---------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const pageLang = () => (document.documentElement.lang || "en").slice(0, 2);
+  const t = (en, es) => (pageLang() === "es" ? es : en);
 
-    // Copy to clipboard
-    if (copyBtn && outEl) {
-      copyBtn.addEventListener("click", async function () {
-        try {
-          await navigator.clipboard.writeText(outEl.innerText.trim());
-          copyBtn.innerHTML = '<i class="bi bi-check2"></i> Copied';
-          setTimeout(() => (copyBtn.innerHTML = '<i class="bi bi-clipboard"></i> Copy'), 1500);
-        } catch (e) {
-          console.error("Copy failed:", e);
-        }
-      });
-    }
+  function showToast(message, isError = false) {
+    const container = $("#toast-container");
+    if (!container || !window.bootstrap) return;
+    const el = document.createElement("div");
+    el.className = `toast align-items-center border-0 text-bg-${isError ? "danger" : "success"}`;
+    el.setAttribute("role", isError ? "alert" : "status");
+    el.innerHTML =
+      '<div class="d-flex"><div class="toast-body"></div>' +
+      '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>';
+    $(".toast-body", el).textContent = message;
+    $(".btn-close", el).setAttribute("aria-label", t("Close", "Cerrar"));
+    container.appendChild(el);
+    el.addEventListener("hidden.bs.toast", () => el.remove());
+    new bootstrap.Toast(el, { delay: 3500 }).show();
+  }
 
-    // Text-to-speech
-    function pickLangCode(valOrText) {
-      const v = String(valOrText || "").toLowerCase();
-      if (v.includes("es") || v.includes("spanish") || v.includes("español")) return "es-ES";
-      return "en-US";
-    }
+  function setBusy(button, busy) {
+    if (!button) return;
+    button.disabled = busy;
+    $(".spinner-border", button)?.classList.toggle("d-none", !busy);
+  }
 
-    function getVoiceFor(langCode) {
-      const voices = window.speechSynthesis.getVoices ? speechSynthesis.getVoices() : [];
-      const exact = voices.find(v => v.lang === langCode);
-      if (exact) return exact;
-      const prefix = voices.find(v => v.lang && v.lang.startsWith(langCode.slice(0,2)));
-      return prefix || voices[0] || null;
-    }
-
-    // Small helper to escape HTML when injecting text into templates
-    function escapeHtml(str) {
-      return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
-
-    // Normalize text for comparison: remove diacritics, lower-case, trim
-    function normalizeText(t) {
-      if (t == null) return '';
-      try {
-        return String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-      } catch (e) {
-        return String(t).toLowerCase().trim();
-      }
-    }
-
-    if (listenBtn && outEl && "speechSynthesis" in window) {
-      // Make sure voices are loaded (Safari/Chrome quirk)
-      window.speechSynthesis.onvoiceschanged = () => {};
-      listenBtn.addEventListener("click", function () {
-        const text = outEl.innerText.trim();
-        if (!text) return;
-        const targetText = tgt ? (tgt.value || tgt.options[tgt.selectedIndex]?.text) : "en";
-        const lang = pickLangCode(targetText);
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = lang;
-        const v = getVoiceFor(lang);
-        if (v) u.voice = v;
-        speechSynthesis.cancel();
-        speechSynthesis.speak(u);
-      });
-    }
-
-    // Helper to rebind UI features for dynamically-inserted lesson content
-    function initLessonInteractions(root) {
-      root = root || document;
-      // Per-item bilingual toggle: buttons that are keyboard accessible and
-      // toggle an expanded panel. We toggle classes and ARIA attributes so CSS
-      // can animate the transition smoothly.
-      root.querySelectorAll('.bilingual-toggle').forEach(btn => {
-        const expId = btn.getAttribute('aria-controls');
-        const exp = expId ? root.querySelector('#' + expId) : btn.nextElementSibling;
-        if (!exp) return;
-        const toggle = () => {
-          const isOpen = btn.getAttribute('aria-expanded') === 'true';
-          // Accordion behavior: close other open panels within the same result container
-          const container = btn.closest('.translation-result') || document;
-          container.querySelectorAll('.bilingual-expanded.is-open').forEach(openEl => {
-            if (openEl !== exp) {
-              openEl.classList.remove('is-open');
-              openEl.setAttribute('aria-hidden', 'true');
-              const b = container.querySelector(`[aria-controls="${openEl.id}"]`);
-              if (b) b.setAttribute('aria-expanded', 'false');
-            }
-          });
-
-          btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
-          exp.setAttribute('aria-hidden', isOpen ? 'true' : 'false');
-          exp.classList.toggle('is-open', !isOpen);
-          // rotate caret icon inside the button to indicate state
-          const caret = btn.querySelector('.caret');
-          if (caret) caret.classList.toggle('rotated', !isOpen);
-        };
-        btn.addEventListener('click', toggle);
-        // Keyboard support (Space/Enter)
-        btn.addEventListener('keydown', (e) => {
-          if (e.key === ' ' || e.key === 'Enter') {
-            e.preventDefault();
-            toggle();
-          }
-        });
-      });
-
-      // Show answer buttons
-      root.querySelectorAll('.btn-show-answer').forEach(b => {
-        b.addEventListener('click', () => {
-          const ans = b.nextElementSibling;
-          if (ans) ans.style.display = 'block';
-        });
-      });
-
-      // Interactive cloze/exercise UI removed — left only passive hints; no handlers necessary.
-    }
-
-    // Delegated handler: in case per-button bindings aren't attached (timing or
-    // dynamic insertion issues), listen on document and toggle panels when any
-    // `.bilingual-toggle` is clicked. This is intentionally simple and mirrors
-    // the toggle behavior in initLessonInteractions.
-    function _toggleForButton(btn) {
-      if (!btn) return;
-      const expId = btn.getAttribute('aria-controls');
-      const exp = expId ? document.getElementById(expId) : btn.nextElementSibling;
-      if (!exp) return;
-      const isOpen = btn.getAttribute('aria-expanded') === 'true';
-      const container = btn.closest('.translation-result') || document;
-      container.querySelectorAll('.bilingual-expanded.is-open').forEach(openEl => {
-        if (openEl !== exp) {
-          openEl.classList.remove('is-open');
-          openEl.setAttribute('aria-hidden', 'true');
-          const b = container.querySelector(`[aria-controls="${openEl.id}"]`);
-          if (b) b.setAttribute('aria-expanded', 'false');
-        }
-      });
-      btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
-      exp.setAttribute('aria-hidden', isOpen ? 'true' : 'false');
-      exp.classList.toggle('is-open', !isOpen);
-      const caret = btn.querySelector('.caret');
-      if (caret) caret.classList.toggle('rotated', !isOpen);
-    }
-
-    document.addEventListener('click', function (e) {
-      const btn = e.target.closest && e.target.closest('.bilingual-toggle');
-      if (btn) {
-        e.preventDefault();
-        _toggleForButton(btn);
-      }
-      const diffBtn = e.target.closest && e.target.closest('.difficulty-tab');
-      if (diffBtn) {
-        e.preventDefault();
-        const diff = diffBtn.getAttribute('data-diff');
-        document.querySelectorAll('.difficulty-section').forEach(sec => {
-          sec.style.display = (sec.getAttribute('data-diff') === diff) ? 'block' : 'none';
-        });
-        // Update tab styling so the clicked tab looks active
-        document.querySelectorAll('.difficulty-tab').forEach(t => {
-          if (t.getAttribute('data-diff') === diff) {
-            t.classList.remove('btn-outline-secondary');
-            t.classList.add('btn-secondary');
-            t.classList.add('active');
-          } else {
-            t.classList.add('btn-outline-secondary');
-            t.classList.remove('btn-secondary');
-            t.classList.remove('active');
-          }
-        });
-      }
+  async function postForm(form) {
+    const resp = await fetch(form.action || window.location.href, {
+      method: "POST",
+      body: new FormData(form),
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      credentials: "same-origin",
     });
-
-    document.addEventListener('keydown', function (e) {
-      const active = document.activeElement;
-      if (!active) return;
-      if (active.classList && active.classList.contains('bilingual-toggle')) {
-        if (e.key === ' ' || e.key === 'Enter') {
-          e.preventDefault();
-          _toggleForButton(active);
-        }
-      }
-    });
-
-    // Helper to show bootstrap toast messages
-    function showToast(title, body, isError) {
-      const container = document.getElementById('toast-container');
-      if (!container) return;
-      const id = 'toast-' + Date.now();
-      const toastEl = document.createElement('div');
-      toastEl.className = 'toast align-items-center text-bg-' + (isError ? 'danger' : 'success') + ' border-0';
-      toastEl.id = id;
-      toastEl.setAttribute('role', 'alert');
-      toastEl.setAttribute('aria-live', 'assertive');
-      toastEl.setAttribute('aria-atomic', 'true');
-      toastEl.innerHTML = `<div class="d-flex"><div class="toast-body"><strong>${title}</strong><div>${body}</div></div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>`;
-      container.appendChild(toastEl);
-      const bsToast = new bootstrap.Toast(toastEl, {delay: 4000});
-      bsToast.show();
-      // remove after hidden
-      toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
-    }
-
-    // AJAX submit helper
-    async function postFormAJAX(formEl, url) {
-      const data = new FormData(formEl);
-      // Read CSRF token from cookie if present and include in header for Django
-      function getCookie(name) {
-        const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
-        return v ? v.pop() : '';
-      }
-      const csrftoken = getCookie('csrftoken');
-      const headers = {'X-Requested-With': 'XMLHttpRequest'};
-      if (csrftoken) headers['X-CSRFToken'] = csrftoken;
-      const resp = await fetch(url, {method: 'POST', body: data, headers: headers, credentials: 'same-origin'});
-      if (!resp.ok) throw new Error('Network response not ok');
-      // Try parse JSON, but fall back to text (HTML) so server can return either.
-      try {
-        return await resp.json();
-      } catch (e) {
-        const text = await resp.text();
-        return {__html_fallback: text};
-      }
-    }
-
-    // Wire Learn form to use AJAX when present
-    const learnForm = document.getElementById('learn-form');
-    if (learnForm) {
-      let __abuelita_ajax_attempted = false;
-      learnForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const url = learnForm.action || window.location.pathname;
-        try {
-          // Attempt AJAX submit; wrap in try/catch to surface errors to the UI
-          __abuelita_ajax_attempted = true;
-          const data = await postFormAJAX(learnForm, url);
-          if (data.__html_fallback) {
-            const container = document.getElementById('learn-result-body');
-            if (container) container.innerHTML = data.__html_fallback;
-            return;
-          }
-          if (data.lesson_output || data.lesson_struct) {
-            const container = document.getElementById('learn-result-body');
-            if (container) {
-              // Render simple fallback text and structured HTML if available
-              let html = '';
-              if (data.lesson_struct) {
-                const s = data.lesson_struct;
-                // Generate a deterministic per-response prefix so test ids are stable
-                const respPrefix = 'bilingual-' + (window.__abuelita_bilingual_seq = (window.__abuelita_bilingual_seq || 0) + 1);
-                // Detect page language: use the html[lang] attribute when present
-                const pageLang = document.documentElement.lang || (document.querySelector('html').getAttribute('lang') || 'en');
-                const showESCompact = pageLang && pageLang.startsWith('es');
-                html += `<div class="translation-result p-3 rounded bg-light">`;
-                const topicEn = s.topic_en || s.topic || '';
-                const topicEs = s.topic_es || '';
-                // Prefer labels provided in lesson_struct, but fall back to reasonable defaults.
-                const labelsFromStruct = s.labels || {};
-                const localized = showESCompact
-                  ? {
-                      topicLabel: labelsFromStruct.topicLabel_es || 'Tema',
-                      tipText: labelsFromStruct.tipText_es || 'Haz clic en cualquier frase o ejemplo para ver Inglés y Español lado a lado.',
-                      phrases: labelsFromStruct.phrases_es || 'Frases',
-                      examples: labelsFromStruct.examples_es || 'Ejemplos',
-                      miniQuiz: s.mini_quiz_es || 'Mini-prueba',
-                      showAnswer: labelsFromStruct.showAnswer_es || 'Mostrar respuesta',
-                      paraphrasesLabel: labelsFromStruct.paraphrases_es || (s.labels && s.labels.paraphrases_es) || 'Paráfrasis',
-                      tryClozeLabel: labelsFromStruct.try_cloze_es || (s.labels && s.labels.try_cloze_es) || '',
-                      difficultyLabels: (s.labels && s.labels.difficulty_es) || {easy: 'Fácil', medium: 'Medio', hard: 'Difícil'},
-                    }
-                  : {
-                      topicLabel: labelsFromStruct.topicLabel_en || 'Topic',
-                      tipText: labelsFromStruct.tipText_en || 'Tip: Click any phrase or example to view English and Spanish side-by-side.',
-                      phrases: labelsFromStruct.phrases_en || 'Phrases',
-                      examples: labelsFromStruct.examples_en || 'Examples',
-                      miniQuiz: s.mini_quiz_en || 'Mini-quiz',
-                      showAnswer: labelsFromStruct.showAnswer_en || 'Show Answer',
-                      paraphrasesLabel: labelsFromStruct.paraphrases_en || (s.labels && s.labels.paraphrases_en) || 'Paraphrases',
-                      tryClozeLabel: labelsFromStruct.try_cloze_en || (s.labels && s.labels.try_cloze_en) || '',
-                      difficultyLabels: (s.labels && s.labels.difficulty_en) || {easy: 'Easy', medium: 'Medium', hard: 'Hard'},
-                    };
-
-                html += `<h6 class="fw-semibold">${localized.topicLabel}: ${showESCompact ? topicEs : topicEn}</h6>`;
-                html += `<div class="mb-2 small text-muted">${localized.tipText}</div>`;
-
-                // Render progression controls (client-side) using localized label
-                const progressionLabel = showESCompact ? (s.labels && s.labels.lesson_progression_es) || 'Progresión de la lección' : (s.labels && s.labels.lesson_progression_en) || 'Lesson progression';
-                html += `<div class="mb-3"><strong>${progressionLabel}:</strong> <div class="btn-group ms-2" role="group">`;
-                // Default difficulty selection comes from lesson_struct labels (fallback to 'easy')
-                const defaultDiff = (s.labels && s.labels.default_difficulty) || 'easy';
-                ['easy','medium','hard'].forEach(d => {
-                  const isActive = d === defaultDiff;
-                  // Active style: grey background + white text -> use btn-secondary
-                  const cls = isActive ? 'btn btn-sm btn-secondary difficulty-tab active' : 'btn btn-sm btn-outline-secondary difficulty-tab';
-                  html += `<button type="button" class="${cls}" data-diff="${d}">${localized.difficultyLabels[d]}</button>`;
-                });
-                html += `</div></div>`;
-
-                // Render phrases grouped by difficulty
-                ['easy','medium','hard'].forEach((diff) => {
-                  const showByDefault = diff === ((s.labels && s.labels.default_difficulty) || 'easy');
-                  html += `<div class="difficulty-section" data-diff="${diff}" style="display:${showByDefault ? 'block' : 'none'}">`;
-                  // Use localized phrases label if provided
-                  const phrasesLabel = showESCompact ? (s.labels && s.labels.phrases_es) || localized.phrases : (s.labels && s.labels.phrases_en) || localized.phrases;
-                  html += `<h6>${phrasesLabel} - ${localized.difficultyLabels[diff]}</h6><ul>`;
-                  const group = (s.phrases_by_difficulty && s.phrases_by_difficulty[diff]) || [];
-                  for (let i = 0; i < group.length; i++) {
-                    const p = group[i];
-                    const pid = `${respPrefix}-phrase-${diff}-${i}`;
-                    html += `<li class="bilingual-item">`;
-                    if (showESCompact) {
-                      html += `<button type="button" class="bilingual-toggle btn btn-link p-0 text-start" aria-expanded="false" aria-controls="${pid}"><div class="d-flex align-items-center"><div class="bilingual-compact">ES: ${p.es}</div><i class="bi bi-caret-down-fill caret ms-2"></i></div></button>`;
-                      html += `<div id="${pid}" class="bilingual-expanded mt-2" aria-hidden="true"><div class="row"><div class="col-12"><strong>EN</strong>: ${p.en}</div></div>`;
-                      // Replace paraphrases with opposite-language phonetic guidance when available
-                      if (showESCompact) {
-                        // Spanish page: show phonetic hint for English text (opposite language)
-                        if (p.phonetic_en) {
-                          html += `<div class="mt-2 small text-muted">Pronunciation (EN):</div><div class="small">${p.phonetic_en}</div>`;
-                        }
-                      } else {
-                        // English page: show phonetic hint for Spanish text
-                        if (p.phonetic_es) {
-                          html += `<div class="mt-2 small text-muted">Pronunciation (ES):</div><div class="small">${p.phonetic_es}</div>`;
-                        }
-                      }
-                      html += `</div>`;
-                    } else {
-                      html += `<button type="button" class="bilingual-toggle btn btn-link p-0 text-start" aria-expanded="false" aria-controls="${pid}"><div class="d-flex align-items-center"><div class="bilingual-compact">EN: ${p.en}</div><i class="bi bi-caret-down-fill caret ms-2"></i></div></button>`;
-                      html += `<div id="${pid}" class="bilingual-expanded mt-2" aria-hidden="true"><div class="row"><div class="col-12"><strong>ES</strong>: ${p.es}</div></div>`;
-                      // Show opposite-language phonetic hint when available; fall back to paraphrases
-                      if (p.phonetic_es) {
-                        html += `<div class="mt-2 small text-muted">Pronunciation (ES):</div><div class="small">${p.phonetic_es}</div>`;
-                      } else if (p.paraphrases_en && p.paraphrases_en.length) {
-                        html += `<div class="mt-2 small text-muted">${localized.paraphrasesLabel}:</div><ul>`;
-                        p.paraphrases_en.forEach(pa => html += `<li class="small">${pa}</li>`);
-                        html += `</ul>`;
-                      }
-                      html += `</div>`;
-                    }
-                    html += `</li>`;
-                  }
-                  html += `</ul></div>`;
-                });
-
-                // Render examples (cloze hints removed)
-                const examplesLabel = showESCompact ? (s.labels && s.labels.examples_es) || localized.examples : (s.labels && s.labels.examples_en) || localized.examples;
-                html += `<div class="mt-4"><h6>${examplesLabel}</h6>`;
-                const examples_all = s.examples || [];
-                examples_all.forEach((ex, idx) => {
-                  html += `<div class="mb-3">`;
-                  if (showESCompact) {
-                    html += `<div class="small text-muted">ES: ${ex.es}</div><div class="mt-1"><strong>EN</strong>: ${ex.en}</div>`;
-                  } else {
-                    html += `<div class="small text-muted">EN: ${ex.en}</div><div class="mt-1"><strong>ES</strong>: ${ex.es}</div>`;
-                  }
-                    // Cloze hints intentionally removed across difficulties and languages
-                  html += `</div>`;
-                });
-                html += `</div>`;
-
-                html += `<h6>${localized.miniQuiz}</h6><ol>`;
-                s.quiz.forEach(q => {
-                  html += `<li>`;
-                  if (showESCompact) {
-                    // On Spanish page: show the Spanish prompt, reveal the English answer
-                    html += `<div>${q.q_es || q.q}</div>`;
-                    if (q.choices_es) { html += '<ul>'; q.choices_es.forEach(c=> html += `<li>${c}</li>`); html += '</ul>'; }
-                    const showAnswerLabel = (s.labels && s.labels.showAnswer_es) || (s.labels && s.labels.showAnswer_en) || (showESCompact ? 'Mostrar respuesta' : 'Show Answer');
-                    html += `<button class="btn btn-sm btn-outline-info mt-1 btn-show-answer">${showAnswerLabel}</button><div class="mt-1" style="display:none">${q.answer_text_en || ''}</div>`;
-                  } else {
-                    // On English page: show the English prompt, reveal the Spanish answer
-                    html += `<div>${q.q_en || q.q}</div>`;
-                    if (q.choices_en) { html += '<ul>'; q.choices_en.forEach(c=> html += `<li>${c}</li>`); html += '</ul>'; }
-                    const showAnswerLabel = (s.labels && s.labels.showAnswer_en) || (s.labels && s.labels.showAnswer_es) || (showESCompact ? 'Mostrar respuesta' : 'Show Answer');
-                    html += `<button class="btn btn-sm btn-outline-info mt-1 btn-show-answer">${showAnswerLabel}</button><div class="mt-1" style="display:none">${q.answer_text_es || ''}</div>`;
-                  }
-                  html += `</li>`;
-                });
-                html += `</ol></div>`;
-              } else if (data.lesson_output) {
-                html += `<div class="translation-result p-3 rounded bg-light"><p class="fs-5 mb-0" style="white-space: pre-line">${data.lesson_output}</p></div>`;
-              }
-              container.innerHTML = html;
-              initLessonInteractions(container);
-            }
-          }
-
-          // Bind interactions for any server-rendered lesson content present on page load
-          try {
-            initLessonInteractions(document);
-          } catch (e) {
-            console.error('Failed to init lesson interactions on load', e);
-          }
-        } catch (err) {
-          console.error('Learn request failed', err);
-          try {
-            showToast('Learn failed', String(err), true);
-          } catch (e) {
-            // ignore toast errors
-          }
-          // Fall back to normal form submit so server-rendered page loads
-          try {
-            learnForm.removeEventListener('submit', arguments.callee);
-          } catch (e) {}
-          learnForm.submit();
-        }
-      });
-    }
-
-    // Ensure server-rendered bilingual toggles are bound on initial page load
+    let data = null;
     try {
-      initLessonInteractions(document);
-    } catch (e) {
-      // Log and continue — non-fatal if DOM isn't ready for some reason
-      console.error('Failed to init lesson interactions at startup', e);
+      data = await resp.json();
+    } catch {
+      /* non-JSON (e.g. a proxy error page) */
     }
+    if (!data) throw new Error(`HTTP ${resp.status}`);
+    return data;
+  }
 
-    // --- Translation Hub AJAX handling ---
-    const translationForm = document.getElementById('translation-form');
-    if (translationForm) {
-      translationForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const url = translationForm.action || window.location.pathname;
-        try {
-          const data = await postFormAJAX(translationForm, url);
-          const resultArea = document.getElementById('translation-result-area');
-          const resultCard = document.getElementById('translation-result-card');
-          const out = document.getElementById('translation-output');
-          if (data && data.translation_result) {
-            // Populate the persistent result area
-            if (resultCard) resultCard.classList.remove('d-none');
-            if (resultArea && !resultArea.querySelector('.card')) {
-              // If server didn't render a card, inject the card markup
-              if (resultCard) resultArea.appendChild(resultCard);
-            }
-            if (out) out.textContent = data.translation_result;
-            // If a download_url is provided, show a download button
-            if (data.download_url) {
-              // remove existing download link if present
-              const existing = resultArea.querySelector('.download-translated');
-              if (existing) existing.remove();
-              const a = document.createElement('a');
-              a.href = data.download_url;
-              a.className = 'btn btn-outline-success btn-sm download-translated';
-              a.innerHTML = '<i class="bi bi-download"></i> Download';
-              // place next to existing controls
-              const controls = resultArea.querySelector('.translation-result .d-flex');
-              if (controls) controls.appendChild(a);
-            }
-            // Bind copy/listen handlers for the newly inserted buttons
-            initResultButtons(resultArea || document);
-          } else if (data && data.__html_fallback) {
-            // Server returned full HTML; replace result area
-            if (resultArea) resultArea.innerHTML = data.__html_fallback;
-            initResultButtons(resultArea || document);
-          }
-        } catch (err) {
-          console.error('Translation request failed', err);
-          showToast('Translation failed', String(err), true);
-          // fallback to full submit
-          translationForm.removeEventListener('submit', arguments.callee);
-          translationForm.submit();
+  // ---------------------------------------------------------------------
+  // Speech synthesis (Listen buttons)
+  // ---------------------------------------------------------------------
+  function speak(text, langTag) {
+    if (!("speechSynthesis" in window) || !text) {
+      showToast(t("Speech isn't supported in this browser.", "Tu navegador no admite voz."), true);
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = langTag;
+    const voices = speechSynthesis.getVoices();
+    const voice =
+      voices.find((v) => v.lang === langTag) || voices.find((v) => v.lang?.startsWith(langTag.slice(0, 2)));
+    if (voice) utterance.voice = voice;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utterance);
+  }
+  // Some browsers load voices lazily; touching the list warms it up.
+  if ("speechSynthesis" in window) speechSynthesis.getVoices();
+
+  // ---------------------------------------------------------------------
+  // Delegated click handling (works for server- and AJAX-rendered content)
+  // ---------------------------------------------------------------------
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+
+    const toggle = target.closest(".bilingual-toggle");
+    if (toggle) {
+      const panel = document.getElementById(toggle.getAttribute("aria-controls"));
+      if (!panel) return;
+      const open = toggle.getAttribute("aria-expanded") !== "true";
+      // Accordion: close the other open panels in this lesson.
+      const scope = toggle.closest(".lesson") || document;
+      $$(".bilingual-toggle[aria-expanded='true']", scope).forEach((other) => {
+        if (other === toggle) return;
+        other.setAttribute("aria-expanded", "false");
+        const otherPanel = document.getElementById(other.getAttribute("aria-controls"));
+        if (otherPanel) {
+          otherPanel.hidden = true;
+          otherPanel.classList.remove("is-open");
         }
       });
+      toggle.setAttribute("aria-expanded", String(open));
+      panel.hidden = !open;
+      panel.classList.toggle("is-open", open);
+      return;
     }
 
-    function initResultButtons(root) {
-      root = root || document;
-      // Copy button
-      root.querySelectorAll('.copy-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const out = document.getElementById('translation-output');
-          if (!out) return;
-          try {
-            await navigator.clipboard.writeText(out.innerText.trim());
-            showToast('Copied', 'Translation copied to clipboard', false);
-          } catch (e) {
-            showToast('Copy failed', String(e), true);
-          }
-        });
+    const tab = target.closest(".difficulty-tab");
+    if (tab) {
+      const scope = tab.closest(".lesson") || document;
+      const diff = tab.dataset.diff;
+      $$(".difficulty-tab", scope).forEach((btn) => {
+        const active = btn === tab;
+        btn.classList.toggle("active", active);
+        btn.classList.toggle("btn-secondary", active);
+        btn.classList.toggle("btn-outline-secondary", !active);
+        btn.setAttribute("aria-selected", String(active));
       });
-
-      // Listen button (uses existing speech helpers)
-      root.querySelectorAll('.listen-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const out = document.getElementById('translation-output');
-          if (!out) return;
-          const text = out.innerText.trim();
-          if (!text) return;
-          const targetSelect = document.getElementById('id_target_language');
-          const targetText = targetSelect ? (targetSelect.value || targetSelect.options[targetSelect.selectedIndex]?.text) : 'en';
-          const lang = pickLangCode(targetText);
-          const u = new SpeechSynthesisUtterance(text);
-          u.lang = lang;
-          const v = getVoiceFor(lang);
-          if (v) u.voice = v;
-          speechSynthesis.cancel();
-          speechSynthesis.speak(u);
-        });
+      $$(".difficulty-section", scope).forEach((sec) => {
+        sec.hidden = sec.dataset.diff !== diff;
       });
+      return;
     }
 
-    // Culture feature removed — no client-side wiring necessary.
+    const showAnswer = target.closest(".btn-show-answer");
+    if (showAnswer) {
+      const answer = showAnswer.nextElementSibling;
+      if (answer) {
+        answer.hidden = !answer.hidden;
+        showAnswer.setAttribute("aria-expanded", String(!answer.hidden));
+      }
+      return;
+    }
+
+    const speakBtn = target.closest(".speak-btn");
+    if (speakBtn) {
+      speak(speakBtn.dataset.speak, speakBtn.dataset.lang || "es-MX");
+    }
+  });
+
+  // Auto-submit the language switcher.
+  document.addEventListener("change", (event) => {
+    if (event.target.matches("select[data-autosubmit]")) event.target.form.submit();
+  });
+
+  // ---------------------------------------------------------------------
+  // Translation hub
+  // ---------------------------------------------------------------------
+  function initTranslator() {
+    const form = $("#translation-form");
+    if (!form) return;
+
+    const src = $("#id_source_language");
+    const tgt = $("#id_target_language");
+    const textarea = $("#id_text_input");
+    const counter = $("#char-count");
+    const submitBtn = $("#translate-btn");
+    const errorBox = $("#translation-error");
+    const card = $("#translation-result-card");
+    const output = $("#translation-output");
+    const download = $(".download-translated");
+    const truncatedNote = $("#truncated-note");
+
+    const other = (lang) => (lang === "en" ? "es" : "en");
+
+    $("#swap-languages")?.addEventListener("click", () => {
+      [src.value, tgt.value] = [tgt.value, src.value];
+      // Swapping should also move the last translation into the input.
+      if (output.textContent.trim() && !card.classList.contains("d-none")) {
+        textarea.value = output.textContent.trim();
+        updateCount();
+      }
+    });
+    src?.addEventListener("change", () => (tgt.value = other(src.value)));
+    tgt?.addEventListener("change", () => (src.value = other(tgt.value)));
+
+    function updateCount() {
+      if (counter && textarea) counter.textContent = textarea.value.length;
+    }
+    textarea?.addEventListener("input", updateCount);
+    updateCount();
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.classList.toggle("d-none", !message);
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      showError("");
+      setBusy(submitBtn, true);
+      try {
+        const data = await postForm(form);
+        if (!data.ok) {
+          showError(data.error || t("Something went wrong.", "Algo salió mal."));
+          return;
+        }
+        output.textContent = data.translation_result;
+        output.lang = data.target_language || tgt.value;
+        card.classList.remove("d-none");
+        truncatedNote?.classList.toggle("d-none", !data.truncated);
+        if (download) {
+          download.classList.toggle("d-none", !data.download_url);
+          download.href = data.download_url || "#";
+        }
+        card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      } catch (err) {
+        console.error("Translation request failed", err);
+        // Fall back to a normal form post so the server renders the result.
+        form.submit();
+      } finally {
+        setBusy(submitBtn, false);
+      }
+    });
+
+    $(".copy-btn")?.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(output.textContent.trim());
+        showToast(t("Copied to clipboard", "Copiado al portapapeles"));
+      } catch {
+        showToast(t("Couldn't copy the text.", "No se pudo copiar el texto."), true);
+      }
+    });
+
+    $(".listen-btn")?.addEventListener("click", () => {
+      speak(output.textContent.trim(), LANG_TAGS[output.lang] || LANG_TAGS[tgt.value] || "es-MX");
+    });
+
+    initSpeechInput(textarea, src, updateCount);
+  }
+
+  // Voice input via the Web Speech API (Chrome, Edge, Safari).
+  function initSpeechInput(textarea, src, onChange) {
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const micBtn = $("#mic-btn");
+    if (!Recognition || !micBtn || !textarea) return;
+    micBtn.classList.remove("d-none");
+
+    let recognition = null;
+    const label = $(".mic-label", micBtn);
+    const idleLabel = label.textContent;
+
+    function stop() {
+      recognition?.stop();
+    }
+
+    micBtn.addEventListener("click", () => {
+      if (recognition) return stop();
+      recognition = new Recognition();
+      recognition.lang = LANG_TAGS[src.value] || "en-US";
+      recognition.interimResults = false;
+      const before = textarea.value ? textarea.value.trimEnd() + " " : "";
+      recognition.onresult = (e) => {
+        const heard = Array.from(e.results)
+          .map((r) => r[0].transcript)
+          .join(" ");
+        textarea.value = before + heard;
+        onChange();
+      };
+      recognition.onerror = (e) => {
+        if (e.error !== "aborted" && e.error !== "no-speech") {
+          showToast(t("Microphone error: ", "Error del micrófono: ") + e.error, true);
+        }
+      };
+      recognition.onend = () => {
+        recognition = null;
+        micBtn.classList.remove("listening");
+        micBtn.setAttribute("aria-pressed", "false");
+        label.textContent = idleLabel;
+      };
+      micBtn.classList.add("listening");
+      micBtn.setAttribute("aria-pressed", "true");
+      label.textContent = t("Listening…", "Escuchando…");
+      recognition.start();
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Learn page
+  // ---------------------------------------------------------------------
+  function initLearn() {
+    const form = $("#learn-form");
+    if (!form) return;
+    const input = $("#input_text");
+    const submitBtn = $("#learn-btn");
+    const resultBody = $("#learn-result-body");
+
+    $$(".topic-chip").forEach((chip) =>
+      chip.addEventListener("click", (event) => {
+        event.preventDefault();
+        input.value = chip.dataset.topic;
+        form.requestSubmit();
+      })
+    );
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!input.value.trim()) return input.focus();
+      setBusy(submitBtn, true);
+      try {
+        const data = await postForm(form);
+        if (!data.ok || !data.html) throw new Error(data.error || "No lesson returned");
+        resultBody.innerHTML = data.html; // server-rendered, auto-escaped by Django
+        const url = new URL(window.location.href);
+        url.searchParams.set("topic", input.value.trim());
+        history.replaceState(null, "", url);
+      } catch (err) {
+        console.error("Learn request failed", err);
+        form.submit();
+      } finally {
+        setBusy(submitBtn, false);
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    initTranslator();
+    initLearn();
   });
 })();

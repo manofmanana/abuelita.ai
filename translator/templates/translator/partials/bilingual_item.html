@@ -1,0 +1,22 @@
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+{% if LANGUAGE_CODE == 'es' %}
+<button type="button" class="bilingual-toggle btn btn-link p-0 text-start" aria-expanded="false" aria-controls="{{ prefix }}-{{ index }}">
+  <span class="bilingual-compact">ES: {{ item.es }}</span> <i class="bi bi-caret-down-fill caret ms-1" aria-hidden="true"></i>
+</button>
+<div id="{{ prefix }}-{{ index }}" class="bilingual-expanded mt-2" hidden>
+  <div lang="en"><strong>EN</strong>: {{ item.en }}</div>
+  {% if item.phonetic_en %}<div class="small text-muted mt-1">{% trans "Pronunciation" %}: {{ item.phonetic_en }}</div>{% endif %}
+  <button type="button" class="btn btn-sm btn-outline-primary mt-2 speak-btn" data-speak="{{ item.en }}" data-lang="en-US"><i class="bi bi-volume-up-fill" aria-hidden="true"></i> {% trans "Listen" %}</button>
+</div>
+{% else %}
+<button type="button" class="bilingual-toggle btn btn-link p-0 text-start" aria-expanded="false" aria-controls="{{ prefix }}-{{ index }}">
+  <span class="bilingual-compact">EN: {{ item.en }}</span> <i class="bi bi-caret-down-fill caret ms-1" aria-hidden="true"></i>
+</button>
+<div id="{{ prefix }}-{{ index }}" class="bilingual-expanded mt-2" hidden>
+  <div lang="es"><strong>ES</strong>: {{ item.es }}</div>
+  {% if item.phonetic_es %}<div class="small text-muted mt-1">{% trans "Pronunciation" %}: {{ item.phonetic_es }}</div>{% endif %}
+  {% if item.paraphrases_en %}<div class="small text-muted mt-1">{% trans "Paraphrases" %}: {{ item.paraphrases_en|join:" · " }}</div>{% endif %}
+  <button type="button" class="btn btn-sm btn-outline-primary mt-2 speak-btn" data-speak="{{ item.es }}" data-lang="es-MX"><i class="bi bi-volume-up-fill" aria-hidden="true"></i> {% trans "Listen" %}</button>
+</div>
+{% endif %}

@@ -1,287 +1,161 @@
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Abuelita.ai\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-10-08 15:47-0700\n"
-"PO-Revision-Date: 2025-10-08 22:50+0000\n"
+"PO-Revision-Date: 2026-10-15\n"
 "Last-Translator: Alejandro Ines <alexinesm@gmail.com>\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 # =========================
 # about.html
 # =========================
-#: translator/templates/translator/about.html:4
 msgid "About - Abuelita.ai"
 msgstr "Acerca de - Abuelita.ai"
 
-#: translator/templates/translator/about.html:17
 msgid "For My Abuelita,"
 msgstr "Para mi Abuelita,"
 
-#: translator/templates/translator/about.html:18
 msgid "Francisca Martínez"
 msgstr "Francisca Martínez"
 
-#: translator/templates/translator/about.html:21
-msgid "Abuelita.ai was created in honor of my grandmother, who inspired this project with her strength, curiosity, and love for learning, so no abuela ever has to wait to understand the world again."
-msgstr "Abuelita.ai fue creado en honor a mi abuela, quien inspiró este proyecto con su fuerza, curiosidad y amor por el aprendizaje — para que ninguna abuela tenga que esperar para entender el mundo otra vez."
-
-#: translator/templates/translator/about.html:35
 msgid "Abuelita portrait"
 msgstr "Retrato de Abuelita"
 
-#: translator/templates/translator/about.html:41
 msgid "Her Story"
 msgstr "Su historia"
 
-#: translator/templates/translator/about.html:44
-msgid "Born in Nochistlán, Zacatecas, México, Francisca dedicated her life to her family and community. Moving to the U.S., she faced the challenge of learning a new language while preserving her Mexican roots."
-msgstr "Nacida en Nochistlán, Zacatecas, México, Francisca dedicó su vida a su familia y comunidad. Al mudarse a los Estados Unidos, enfrentó el desafío de aprender un nuevo idioma mientras preservaba sus raíces mexicanas."
-
-#: translator/templates/translator/about.html:49
-msgid "She inspired the mission behind Abuelita.ai, blending technology with empathy, helping people communicate across generations and cultures."
-msgstr "Ella inspiró la misión detrás de Abuelita.ai — combinando la tecnología con empatía, ayudando a las personas a comunicarse entre generaciones y culturas."
-
-#: translator/templates/translator/about.html:62
 msgid "Our Mission"
 msgstr "Nuestra misión"
 
-#: translator/templates/translator/about.html:75
 msgid "Empower Communication"
 msgstr "Fortalecer la comunicación"
 
-#: translator/templates/translator/about.html:77
-msgid "Breaking language barriers through translation and cultural connection."
+msgid ""
+"Breaking language barriers through translation and cultural connection."
 msgstr ""
 "Rompiendo las barreras del idioma mediante la traducción y la conexión "
 "cultural."
 
-#: translator/templates/translator/about.html:87
 msgid "Honor Heritage"
 msgstr "Honrar la herencia"
 
-#: translator/templates/translator/about.html:89
 msgid ""
 "Preserving the wisdom, warmth, and voice of our elders in every interaction."
 msgstr ""
 "Preservando la sabiduría, la calidez y la voz de nuestros mayores en cada "
 "interacción."
 
-#: translator/templates/translator/about.html:99
 msgid "Inspire Learning"
 msgstr "Inspirar el aprendizaje"
 
-#: translator/templates/translator/about.html:101
 msgid ""
 "Encouraging curiosity and growth through bilingual education and AI tools."
 msgstr ""
 "Fomentando la curiosidad y el crecimiento mediante la educación bilingüe y "
 "las herramientas de IA."
 
-#: translator/templates/translator/about.html:115
 msgid "Para que nunca más una abuela tenga que esperar a entender el mundo."
 msgstr "Para que nunca más una abuela tenga que esperar a entender el mundo."
 
-#: translator/templates/translator/about.html:119
 msgid "Dedicated to all the grandmothers who inspire us to keep learning."
 msgstr "Dedicado a todas las abuelas que nos inspiran a seguir aprendiendo."
 
-# =========================
-# base.html
-# =========================
-#: translator/templates/translator/base.html:68
-msgid "Home"
-msgstr "Inicio"
-
-#: translator/templates/translator/base.html:76
 msgid "Learn"
 msgstr "Aprender"
 
-#: translator/templates/translator/base.html:84
-msgid "Culture"
-msgstr "Cultura"
-
-#: translator/templates/translator/base.html:92
 msgid "About"
 msgstr "Acerca de"
 
-#: translator/templates/translator/base.html:131
 msgid "Features"
 msgstr "Características"
 
-#: translator/templates/translator/base.html:134
 msgid "Smart Translation"
 msgstr "Traducción inteligente"
 
-#: translator/templates/translator/base.html:137
 msgid "Voice Recognition"
 msgstr "Reconocimiento de voz"
 
-#: translator/templates/translator/base.html:144
-#, fuzzy
 #| msgid "Start a Lesson"
 msgid "Interactive Lessons"
-msgstr "Comenzar una lección"
+msgstr "Lecciones interactivas"
 
-#: translator/templates/translator/base.html:150
 msgid "Cultural Learning"
 msgstr "Aprendizaje cultural"
 
-#: translator/templates/translator/base.html:153
 msgid "Idioms & Sayings"
 msgstr "Modismos y dichos"
 
-#: translator/templates/translator/base.html:156
 msgid "Mexican Culture"
 msgstr "Cultura mexicana"
 
-#: translator/templates/translator/base.html:159
 msgid "Community Wisdom"
 msgstr "Sabiduría comunitaria"
 
-#: translator/templates/translator/base.html:161
 msgid "Abuela's Touch"
 msgstr "El toque de la abuela"
 
 # =========================
-# culture.html
-# =========================
-#: translator/templates/translator/culture.html:5
-msgid "Cultural Wisdom - Abuelita.ai"
-msgstr "Sabiduría cultural - Abuelita.ai"
-
-#: translator/templates/translator/culture.html:11
-msgid "Cultural Wisdom"
-msgstr "Sabiduría cultural"
-
-#: translator/templates/translator/culture.html:14
-msgid ""
-"Learn idioms, slang, and traditions — explained with Abuelita’s warmth and "
-"humor."
-msgstr ""
-"Aprende modismos, expresiones y tradiciones — explicadas con la calidez y el "
-"humor de Abuelita."
-
-#: translator/templates/translator/culture.html:21
-msgid "Enter a phrase, idiom, or tradition:"
-msgstr "Ingresa una frase, modismo o tradición:"
-
-#: translator/templates/translator/culture.html:29
-msgid "e.g. Pan de Muerto, Si Dios quiere, Quinceañera..."
-msgstr "Ej: Pan de Muerto, Si Dios quiere, Quinceañera..."
-
-#: translator/templates/translator/culture.html:34
-msgid "Get Cultural Insight"
-msgstr "Obtener explicación cultural"
-
-#: translator/templates/translator/culture.html:41
-msgid "Abuelita’s Explanation"
-msgstr "Explicación de Abuelita"
-
-#: translator/templates/translator/culture.html:54
-msgid "Explore Popular Topics"
-msgstr "Explora temas populares"
-
-#: translator/templates/translator/culture.html:61
-msgid "Fiestas and Music"
-msgstr "Fiestas y música"
-
-#: translator/templates/translator/culture.html:62
-msgid "Discover Latin rhythms and traditions behind every celebration."
-msgstr "Descubre los ritmos y tradiciones latinas detrás de cada celebración."
-
-#: translator/templates/translator/culture.html:70
-msgid "Idioms & Humor"
-msgstr "Modismos y humor"
-
-#: translator/templates/translator/culture.html:71
-msgid "Understand everyday sayings and the playful spirit behind them."
-msgstr "Comprende los dichos cotidianos y el espíritu alegre que encierran."
-
-#: translator/templates/translator/culture.html:79
-msgid "Family & Traditions"
-msgstr "Familia y tradiciones"
-
-#: translator/templates/translator/culture.html:80
-msgid "Learn the values, food, and customs that shape generations."
-msgstr "Aprende los valores, comidas y costumbres que forman generaciones."
-
-# =========================
 # index.html
 # =========================
-#: translator/templates/translator/index.html:4
 msgid "Home - Abuelita.ai"
 msgstr "Inicio - Abuelita.ai"
 
-#: translator/templates/translator/index.html:19
 msgid ""
 "Bridge language barriers with bilingual translation and cultural wisdom — "
 "inspired by my grandmother, Francisca Martínez."
 msgstr ""
-"Rompe las barreras del idioma con traducción bilingüe y sabiduría cultural — "
-"inspirada por mi abuela, Francisca Martínez."
+"Rompe las barreras del idioma con traducción bilingüe y sabiduría cultural —"
+" inspirada por mi abuela, Francisca Martínez."
 
-#: translator/templates/translator/index.html:29
 msgid "Translation Hub"
 msgstr "Centro de Traducción"
 
-#: translator/templates/translator/index.html:30
 msgid "Upload files or type text to translate"
 msgstr "Sube archivos o escribe texto para traducir"
 
-#: translator/templates/translator/index.html:39
 msgid "From:"
 msgstr "De:"
 
-#: translator/templates/translator/index.html:43
 msgid "Swap Languages"
 msgstr "Intercambiar idiomas"
 
-#: translator/templates/translator/index.html:48
 msgid "To:"
 msgstr "A:"
 
-#: translator/templates/translator/index.html:56
 msgid "Upload file (TXT, DOCX, PDF):"
 msgstr "Subir archivo (TXT, DOCX, PDF):"
 
-#: translator/templates/translator/index.html:59
 msgid "Upload a document to translate its contents"
 msgstr "Sube un documento para traducir su contenido"
 
-#: translator/templates/translator/index.html:65
 msgid "Text to translate:"
 msgstr "Texto a traducir:"
 
-#: translator/templates/translator/index.html:73
 msgid "Translate"
 msgstr "Traducir"
 
-#: translator/templates/translator/index.html:82
 msgid "Translation Result"
 msgstr "Resultado de la traducción"
 
-#: translator/templates/translator/index.html:89
 msgid "Listen"
 msgstr "Escuchar"
 
-#: translator/templates/translator/index.html:92
 msgid "Copy"
 msgstr "Copiar"
 
 # =========================
 # learn.html
 # =========================
-#: translator/templates/translator/learn.html:5
-#: translator/templates/translator/learn.html:12
 msgid "Language Learning Hub"
 msgstr "Centro de aprendizaje de idiomas"
 
-#: translator/templates/translator/learn.html:15
 msgid ""
 "Guided lessons by Abuelita — learn languages with warmth, humor, and "
 "cultural wisdom."
@@ -289,65 +163,134 @@ msgstr ""
 "Lecciones guiadas por Abuelita — aprende idiomas con calidez, humor y "
 "sabiduría cultural."
 
-#: translator/templates/translator/learn.html:25
 msgid "Start a Lesson"
 msgstr "Comenzar una lección"
 
-#: translator/templates/translator/learn.html:26
 msgid "Choose your path and let Abuelita guide you"
 msgstr "Elige tu camino y deja que Abuelita te guíe"
 
-#: translator/templates/translator/learn.html:33
 msgid "What would you like to learn about?"
 msgstr "¿Qué te gustaría aprender?"
 
-#: translator/templates/translator/learn.html:40
 msgid "e.g. Common greetings, colors, or simple conversations..."
 msgstr "Ej: saludos comunes, colores o conversaciones simples..."
 
-#: translator/templates/translator/learn.html:45
 msgid "Learn with Abuelita"
 msgstr "Aprender con Abuelita"
 
-#: translator/templates/translator/learn.html:54
 msgid "Lesson Result"
 msgstr "Resultado de la lección"
 
-#: translator/templates/translator/learn.html:62
 msgid "Your lesson will appear here after you start."
 msgstr "Tu lección aparecerá aquí después de comenzar."
 
 # =========================
 # views.py messages
 # =========================
-#: translator/views.py:20
 msgid "Please choose two different languages."
 msgstr "Por favor, elige dos idiomas diferentes."
 
-#: translator/views.py:37
 msgid "Unsupported file type."
 msgstr "Tipo de archivo no compatible."
 
-#: translator/views.py:39
-msgid "Error reading file: "
-msgstr "Error al leer el archivo: "
-
-#: translator/views.py:49
-msgid "Translation error: "
-msgstr "Error de traducción: "
-
-#: translator/views.py:51
 msgid "Please enter or upload text to translate."
 msgstr "Por favor, ingresa o sube texto para traducir."
 
-#: translator/templates/translator/about.html:60
-msgid "To make learning languages feel like sitting at your grandmother’s table — warm, patient, and full of heart."
-msgstr "Hacer que aprender idiomas se sienta como sentarse en la mesa de tu abuela — cálido, paciente y lleno de corazón."
-
-#: translator/templates/translator/base.html:144
 msgid "Text-to-Speech"
 msgstr "Texto a voz"
 
-#: translator/templates/translator/base.html:205
 msgid "Built with Django & AI"
 msgstr "Desarrollado con Django e IA"
+
+msgid ""
+"Bilingual English–Spanish translation and micro-lessons, inspired by my "
+"grandmother, Francisca Martínez."
+msgstr ""
+"Traducción y microlecciones bilingües inglés–español, inspiradas en mi "
+"abuela, Francisca Martínez."
+
+msgid "Skip to content"
+msgstr "Saltar al contenido"
+
+msgid "Main navigation"
+msgstr "Navegación principal"
+
+msgid "Toggle navigation"
+msgstr "Mostrar u ocultar navegación"
+
+msgid "Welcome to"
+msgstr "Bienvenido a"
+
+msgid "Speak instead of typing"
+msgstr "Habla en lugar de escribir"
+
+msgid "Speak"
+msgstr "Hablar"
+
+msgid "This document was long, so only the first part was translated."
+msgstr "El documento era largo, así que solo se tradujo la primera parte."
+
+msgid "Download"
+msgstr "Descargar"
+
+msgid "Try:"
+msgstr "Prueba:"
+
+msgid "Pronunciation"
+msgstr "Pronunciación"
+
+msgid "Paraphrases"
+msgstr "Paráfrasis"
+
+msgid "Language"
+msgstr "Idioma"
+
+msgid "Go"
+msgstr "Ir"
+
+msgid "Difficulty"
+msgstr "Dificultad"
+
+msgid "No phrases at this level — try another tab."
+msgstr "No hay frases en este nivel — prueba otra pestaña."
+
+msgid "Link to this lesson"
+msgstr "Enlace a esta lección"
+
+msgid "We couldn't read that file. Is it a valid TXT, DOCX or PDF?"
+msgstr "No pudimos leer ese archivo. ¿Es un TXT, DOCX o PDF válido?"
+
+msgid "English"
+msgstr "Inglés"
+
+msgid "Spanish"
+msgstr "Español"
+
+msgid "From"
+msgstr "De"
+
+msgid "To"
+msgstr "A"
+
+msgid "Upload a document (TXT, DOCX, PDF)"
+msgstr "Sube un documento (TXT, DOCX, PDF)"
+
+msgid "Text to translate"
+msgstr "Texto a traducir"
+
+msgid "Type or paste text, or use the microphone…"
+msgstr "Escribe o pega texto, o usa el micrófono…"
+
+#, python-format
+msgid "That file is too large (max %(mb)s MB)."
+msgstr "Ese archivo es demasiado grande (máximo %(mb)s MB)."
+
+msgid "We couldn't find any text to translate."
+msgstr "No encontramos texto para traducir."
+
+msgid ""
+"The translation service is unavailable right now. Please try again in a "
+"moment."
+msgstr ""
+"El servicio de traducción no está disponible en este momento. Inténtalo de "
+"nuevo en un momento."

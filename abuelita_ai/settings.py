@@ -1,28 +1,67 @@
-"""
-Django settings for Abuelita.ai project
-Updated to correctly render Django templates (fixes raw {% trans %} issue)
+"""Django settings for Abuelita.ai.
+
+Configuration comes from environment variables so the same file works for
+local development, tests, and production. See ``.env.example`` for the full
+list. Nothing here needs editing to deploy.
 """
 
-from pathlib import Path
+import logging
 import os
+import secrets
+from pathlib import Path
 
-# =========================
-# BASE PATHS
-# =========================
+import dj_database_url
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# =========================
-# SECURITY SETTINGS
-# =========================
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-key")
-DEBUG = os.getenv("DEBUG", "True").lower() == "true"
-# Allow passing ALLOWED_HOSTS via environment (comma-separated) for platforms
-# like Railway. Defaults keep localhost and testserver so local tests and dev
-# continue to work.
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",")
+logger = logging.getLogger(__name__)
+
+
+def env_bool(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def env_list(name: str, default: str = "") -> list[str]:
+    return [item.strip() for item in os.getenv(name, default).split(",") if item.strip()]
+
 
 # =========================
-# APPLICATION DEFINITION
+# SECURITY
+# =========================
+# DJANGO_DEBUG / DJANGO_SECRET_KEY are preferred; the unprefixed names are
+# still honoured so older deployments keep working.
+DEBUG = env_bool("DJANGO_DEBUG", env_bool("DEBUG", False))
+
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY") or os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "django-insecure-local-development-only"
+    else:
+        # Never fall back to a well-known key in production. A random key keeps
+        # the site running but invalidates sessions on every restart, so set a
+        # real one.
+        SECRET_KEY = secrets.token_urlsafe(50)
+        logger.warning("DJANGO_SECRET_KEY is not set; using a temporary random key.")
+
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,testserver"))
+CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
+
+# Behind a TLS-terminating proxy (Render, Railway, PythonAnywhere, ...).
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = env_bool("DJANGO_SECURE_COOKIES", True)
+    CSRF_COOKIE_SECURE = env_bool("DJANGO_SECURE_COOKIES", True)
+    SECURE_SSL_REDIRECT = env_bool("DJANGO_SSL_REDIRECT", False)
+    SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_HSTS_SECONDS", "0"))
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = "same-origin"
+
+# =========================
+# APPLICATIONS
 # =========================
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -31,15 +70,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "translator",  # your app
+    "translator",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    # WhiteNoise allows serving static files in production (used by Railway).
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.locale.LocaleMiddleware",  # enables i18n
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -48,16 +86,12 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "abuelita_ai.urls"
+WSGI_APPLICATION = "abuelita_ai.wsgi.application"
 
-# =========================
-# TEMPLATES
-# =========================
-# ✅ Fixed to use only app-level template discovery
-# This ensures Django properly parses {% trans %} and {% block %} tags.
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],  # leave empty so Django uses app templates
+        "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -70,87 +104,65 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "abuelita_ai.wsgi.application"
+# =========================
+# DATABASE
+# =========================
+# DATABASE_URL (e.g. postgres://user:pass@host/db) wins; otherwise SQLite.
+DATABASES = {
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+    )
+}
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # =========================
 # INTERNATIONALIZATION
 # =========================
 LANGUAGE_CODE = "en"
-
 LANGUAGES = [
     ("en", "English"),
     ("es", "Español"),
 ]
-
+LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
-
-LOCALE_PATHS = [
-    BASE_DIR / "locale",
-]
 
 # =========================
 # STATIC FILES
 # =========================
 STATIC_URL = "/static/"
-
-# Directories where Django looks for static files during development
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
-
-# Directory used by collectstatic for production
+STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
-# Use WhiteNoise storage backend in production for compressed static files.
-# Default to the simpler development storage so tests and local runs don't
-# require running collectstatic (which creates the manifest). You can force
-# the compressed manifest storage in production by setting the
-# STATICFILES_STORAGE environment variable.
-STATICFILES_STORAGE = os.getenv(
-    "STATICFILES_STORAGE",
-    # Use Whitenoise compressed storage by default (doesn't require a
-    # manifest) so tests and local runs are happy, while still including
-    # 'whitenoise' in the setting string (the deploy-time option can be
-    # overridden to use the manifest-backed storage).
-    "whitenoise.storage.CompressedStaticFilesStorage",
-)
-
-# When deployed behind a proxy (Railway, etc.), honor X-Forwarded-Proto
-# if the environment requests it. This is safe to set; Django ignores it
-# unless configured.
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
-# =========================
-# DEFAULT PRIMARY KEY FIELD
-# =========================
-DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
-
- # =========================
- # Database
- # =========================
- # Allow overriding the DB backend via environment variables (for example, to use
- # Postgres in production). If no DB is configured, default to a local sqlite3
- # file so the test runner and development environment work out of the box.
-DATABASES = {
-    "default": {
-        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.sqlite3"),
-        "NAME": os.getenv("DB_NAME", str(BASE_DIR / "db.sqlite3")),
-    }
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        # Compressed (gzip/brotli) without a manifest, so tests and local runs
+        # work without collectstatic. Override with
+        # whitenoise.storage.CompressedManifestStaticFilesStorage for
+        # cache-busted filenames in production.
+        "BACKEND": os.getenv(
+            "DJANGO_STATICFILES_STORAGE",
+            "whitenoise.storage.CompressedStaticFilesStorage",
+        ),
+    },
 }
 
 # =========================
-# LOGGING (optional - helpful during debug)
+# UPLOADS / TRANSLATION LIMITS
+# =========================
+ABUELITA_MAX_UPLOAD_MB = int(os.getenv("ABUELITA_MAX_UPLOAD_MB", "5"))
+ABUELITA_MAX_TRANSLATE_CHARS = int(os.getenv("ABUELITA_MAX_TRANSLATE_CHARS", "20000"))
+FILE_UPLOAD_MAX_MEMORY_SIZE = ABUELITA_MAX_UPLOAD_MB * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = FILE_UPLOAD_MAX_MEMORY_SIZE + 1024 * 1024
+
+# =========================
+# LOGGING
 # =========================
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {
-        "console": {"class": "logging.StreamHandler"},
-    },
-    "root": {
-        "handlers": ["console"],
-        "level": "INFO",
-    },
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": os.getenv("DJANGO_LOG_LEVEL", "INFO")},
 }
