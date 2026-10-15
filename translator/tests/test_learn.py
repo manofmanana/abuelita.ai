@@ -97,3 +97,9 @@ def test_mass_nouns_are_not_pluralised():
     text = " ".join(p["en"] for p in lesson["phrases"] + lesson["examples"])
     assert "musics" not in text
     assert lesson["quiz"][0]["answer_text_en"] == "I like music."
+
+
+def test_default_level_has_phrases():
+    lesson = generate_lesson("food", as_struct=True)
+    default = lesson["labels"]["default_difficulty"]
+    assert lesson["phrases_by_difficulty"][default]

@@ -10,7 +10,7 @@
   --red: #ce1126;
   --red-dark: #9f0b1c;
   --white: rgba(255, 255, 255, 0.96);
-  --white-soft: rgba(255, 255, 255, 0.55);
+  --white-soft: rgba(255, 255, 255, 0.62);
   --primary-custom: var(--green-dark);
   --accent: var(--red);
   --accent-light: #ffe5ea;
@@ -138,7 +138,7 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
   background-color: rgba(255, 255, 255, 0.12);
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.45);
-  min-width: 140px;
+  min-width: 120px;
   font-weight: 500;
   --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
 }
@@ -171,6 +171,11 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
   background-color: var(--red);
   border-color: var(--red);
   animation: pulse 1.4s ease-in-out infinite;
+}
+
+@media (max-width: 575.98px) {
+  .lang-pair-select { font-size: 1rem; padding-left: 0.6rem; }
+  .swap-btn { padding: 0.35rem 0.6rem; }
 }
 
 /* =========================

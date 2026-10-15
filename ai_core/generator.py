@@ -419,7 +419,8 @@ def _assemble(topic_en: str, topic_es: str, phrases: list[dict], examples: list[
             }
             for d in DIFFICULTIES
         ],
-        "labels": LABELS,
+        # Open on the easiest level that actually has phrases.
+        "labels": {**LABELS, "default_difficulty": next((d for d in DIFFICULTIES if phrases_by_difficulty[d]), "easy")},
     }
 
 
