@@ -1,14 +1,12 @@
-from .generator import generate_lesson, _build_lesson_from_sentences
-from .translator import translate_to_spanish
-from .evaluator import grade_answer
+from .generator import generate_lesson, lesson_to_text
 from .recommender import recommend_similar
-from .analytics import summarize_progress
+from .translator import TranslationError, translate, translate_to_spanish
 
 __all__ = [
+    "TranslationError",
     "generate_lesson",
-    "_build_lesson_from_sentences",
-    "translate_to_spanish",
-    "grade_answer",
+    "lesson_to_text",
     "recommend_similar",
-    "summarize_progress",
+    "translate",
+    "translate_to_spanish",
 ]

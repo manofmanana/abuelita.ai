@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    env:
+      ABUELITA_OFFLINE: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          sudo apt-get update -qq && sudo apt-get install -y -qq gettext
+
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Check JavaScript syntax
+        run: node --check translator/static/translator/js/main.js
+
+      - name: Check translations compile
+        run: |
+          python scripts/check_trans_tags.py
+          python manage.py compilemessages --ignore=.venv
+
+      - name: Django checks
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+
+      - name: Tests
+        run: python -m pytest -q

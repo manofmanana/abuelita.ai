@@ -1,0 +1,24 @@
+[project]
+name = "abuelita-ai"
+version = "2.0.0"
+description = "Bilingual English–Spanish translation hub and micro-lesson generator, built in memory of Francisca Martínez."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+authors = [{ name = "Alejandro Ines" }]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "abuelita_ai.settings"
+python_files = ["test_*.py", "tests.py"]
+testpaths = ["translator", "ai_core"]
+addopts = "-p no:cacheprovider"
+filterwarnings = ["ignore:No directory at:UserWarning"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["translator/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "DJ"]
+ignore = ["E501"]

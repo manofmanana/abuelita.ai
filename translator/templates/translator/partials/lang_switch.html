@@ -1,41 +1,14 @@
 {% load i18n %}
-{% load i18n %}
-<form action="{% url 'set_language' %}" method="post" class="d-inline">
+{% get_current_language as LANGUAGE_CODE %}
+{% get_available_languages as LANGUAGES %}
+<form action="{% url 'set_language' %}" method="post" class="lang-form d-flex align-items-center gap-2">
   {% csrf_token %}
-  {# Use full_path so language prefix and querystring are preserved on redirect #}
-  <input type="hidden" name="next" value="{{ request.get_full_path }}">
-  <select name="language" class="form-select form-select-sm lang-select" onchange="this.form.submit()">
-    {% get_current_language as LANGUAGE_CODE %}
-    {% get_available_languages as LANGUAGES %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+  <label class="visually-hidden" for="lang-select">{% trans "Language" %}</label>
+  <select id="lang-select" name="language" class="form-select form-select-sm lang-select" data-autosubmit>
     {% for lang_code, lang_name in LANGUAGES %}
-      <option value="{{ lang_code }}" {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>
-        {% if lang_code == 'en' %}🇺🇸{% else %}🇲🇽{% endif %} {{ lang_name }}
-      </option>
+    <option value="{{ lang_code }}" {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>{% if lang_code == 'en' %}🇺🇸{% else %}🇲🇽{% endif %} {{ lang_name }}</option>
     {% endfor %}
   </select>
+  <noscript><button type="submit" class="btn btn-sm btn-light">{% trans "Go" %}</button></noscript>
 </form>
-
-<style>
-  .lang-select {
-    background-color: transparent;
-    color: white;
-    border: 1px solid rgba(255,255,255,0.4);
-    border-radius: 6px;
-    padding-right: 2rem; /* space for caret */
-    font-weight: 500;
-    font-size: 0.9rem;
-    width: auto;
-    min-width: 120px;
-    appearance: none;
-  }
-
-  .lang-select option {
-    color: #000; /* dark dropdown text */
-    background-color: var(--white);
-  }
-
-  .lang-select:focus {
-    box-shadow: 0 0 0 0.2rem rgba(255,255,255,0.25);
-    border-color: rgba(255,255,255,0.5);
-  }
-</style>

@@ -1,179 +1,94 @@
 {% extends "translator/base.html" %}
-{% load i18n static %}
+{% load i18n %}
 {% block title %}{% trans "Home - Abuelita.ai" %}{% endblock %}
 {% block home_active %}active{% endblock %}
+{% block page_bg_class %}page-bg--index{% endblock %}
+
 {% block content %}
+<section class="hero-section py-5 text-center">
+  <div class="container">
+    <h1 class="display-4 fw-bold mb-3">
+      <span class="text-primary-custom">¡Hola!</span> {% trans "Welcome to" %} <span class="text-accent">Abuelita.ai</span>
+    </h1>
+    <p class="lead mb-0 mx-auto hero-lead">{% trans "Bridge language barriers with bilingual translation and cultural wisdom — inspired by my grandmother, Francisca Martínez." %}</p>
+  </div>
+</section>
 
-<!-- Background wrapper -->
-<div
-  class="background-wrapper"
-  style="
-    background: url('{% static 'backgrounds/index.jpg' %}') no-repeat center
-      center fixed;
-    background-size: cover;
-  "
->
-  <div
-    class="bg-overlay"
-    style="background-color: rgba(255, 255, 255, 0.55); min-height: 100vh"
-  >
-    <!-- Hero Section -->
-    <section class="hero-section py-5 text-center text-dark">
-      <div class="container">
-        <h1 class="display-4 fw-bold mb-3">
-          <span class="text-primary-custom">¡Hola!</span> Welcome to
-          <span class="text-accent">Abuelita.ai</span>
-        </h1>
-        <p class="lead text-muted mb-4">{% trans "Bridge language barriers with bilingual translation and cultural wisdom — inspired by my grandmother, Francisca Martínez." %}</p>
+<section class="pb-5">
+  <div class="container">
+    <div class="card glass-card shadow-lg rounded-4">
+      <div class="card-header bg-primary-custom text-white text-center py-3">
+        <h2 class="h3 mb-0"><i class="bi bi-translate" aria-hidden="true"></i> {% trans "Translation Hub" %}</h2>
+        <p class="small mb-0">{% trans "Upload files or type text to translate" %}</p>
       </div>
-    </section>
 
-    <!-- Translation Hub -->
-    <section class="py-5">
-      <div class="container">
-        <div
-          class="card shadow-lg border-0 rounded-4"
-          style="
-            backdrop-filter: blur(6px);
-            background-color: rgba(255, 255, 255, 0.9);
-          "
-        >
-          <div
-            class="card-header bg-primary-custom text-white text-center py-3 rounded-top"
-          >
-            <h3 class="mb-0">
-              <i class="bi bi-translate"></i> {% trans "Translation Hub" %}
-            </h3>
-            <p class="small mb-0">
-              {% trans "Upload files or type text to translate" %}
-            </p>
+      <div class="card-body p-4">
+        <form method="post" enctype="multipart/form-data" id="translation-form" novalidate>
+          {% csrf_token %}
+
+          <div class="row g-3 align-items-end mb-4">
+            <div class="col-5">
+              <label class="form-label fw-semibold" for="{{ form.source_language.id_for_label }}">{% trans "From:" %}</label>
+              {{ form.source_language }}
+            </div>
+            <div class="col-2 text-center">
+              <button type="button" class="btn btn-outline-secondary btn-lg rounded-circle" id="swap-languages" title="{% trans 'Swap Languages' %}" aria-label="{% trans 'Swap Languages' %}">
+                <i class="bi bi-arrow-left-right" aria-hidden="true"></i>
+              </button>
+            </div>
+            <div class="col-5">
+              <label class="form-label fw-semibold" for="{{ form.target_language.id_for_label }}">{% trans "To:" %}</label>
+              {{ form.target_language }}
+            </div>
           </div>
 
-          <div class="card-body p-4">
-            <form
-              method="post"
-              enctype="multipart/form-data"
-              id="translation-form"
-            >
-              {% csrf_token %}
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-end mb-2">
+              <label class="form-label fw-semibold mb-0" for="{{ form.text_input.id_for_label }}"><i class="bi bi-keyboard" aria-hidden="true"></i> {% trans "Text to translate:" %}</label>
+              <button type="button" class="btn btn-sm btn-outline-primary d-none" id="mic-btn" aria-pressed="false" title="{% trans 'Speak instead of typing' %}">
+                <i class="bi bi-mic-fill" aria-hidden="true"></i> <span class="mic-label">{% trans "Speak" %}</span>
+              </button>
+            </div>
+            {{ form.text_input }}
+            <div class="form-text text-end"><span id="char-count">0</span> / {{ form.text_input.field.widget.attrs.maxlength }}</div>
+          </div>
 
-              <!-- Language Selection -->
-              <div class="row align-items-end mb-4">
-                <div class="col-md-5">
-                  <label class="form-label fw-semibold"
-                    >{% trans "From:" %}</label
-                  >
-                  {{ form.source_language }}
-                </div>
-                <div class="col-md-2 text-center">
-                  <button
-                    type="button"
-                    class="btn btn-outline-secondary btn-lg rounded-circle"
-                    id="swap-languages"
-                    title="{% trans 'Swap Languages' %}"
-                  >
-                    <i class="bi bi-arrow-left-right"></i>
-                  </button>
-                </div>
-                <div class="col-md-5">
-                  <label class="form-label fw-semibold"
-                    >{% trans "To:" %}</label
-                  >
-                  {{ form.target_language }}
-                </div>
-              </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold" for="{{ form.file_upload.id_for_label }}"><i class="bi bi-cloud-upload" aria-hidden="true"></i> {% trans "Upload file (TXT, DOCX, PDF):" %}</label>
+            {{ form.file_upload }}
+            <div class="form-text">{% trans "Upload a document to translate its contents" %}</div>
+          </div>
 
-              <!-- File Upload -->
-              <div class="mb-4">
-                <label class="form-label fw-semibold"><i class="bi bi-cloud-upload"></i> {% trans "Upload file (TXT, DOCX, PDF):" %}</label>
-                {{ form.file_upload }}
-                <div class="form-text">{% trans "Upload a document to translate its contents" %}</div>
-              </div>
+          <div class="text-center">
+            <button type="submit" class="btn btn-success btn-lg px-5 shadow" id="translate-btn">
+              <span class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true"></span>
+              <i class="bi bi-translate" aria-hidden="true"></i> {% trans "Translate" %}
+            </button>
+          </div>
+        </form>
 
-              <!-- Text Input -->
-              <div class="mb-4">
-                <label class="form-label fw-semibold"><i class="bi bi-keyboard"></i> {% trans "Text to translate:" %}</label>
-                {{ form.text_input }}
-              </div>
+        <div id="translation-error" class="alert alert-danger mt-4 {% if not error %}d-none{% endif %}" role="alert">{{ error|default:"" }}</div>
 
-              <!-- Submit -->
-              <div class="text-center">
-                <button
-                  type="submit"
-                  class="btn btn-success btn-lg px-5 shadow"
-                >
-                  <i class="bi bi-translate"></i> {% trans "Translate" %}
-                </button>
-              </div>
-            </form>
-
-            <!-- Result area -->
-            <div id="translation-result-area" class="mt-5">
-              {% if translation_result %}
-              <div class="card border-success shadow-sm">
-                <div class="card-header bg-success text-white">
-                  <h5 class="mb-0"><i class="bi bi-check-circle-fill"></i> {% trans "Translation Result" %}</h5>
-                </div>
-                <div class="card-body bg-white">
-                  <div class="translation-result p-3 bg-light rounded">
-                    <p class="fs-5 mb-3" id="translation-output">
-                      {{ translation_result }}
-                    </p>
-                    <div class="d-flex gap-2">
-                      <button
-                        type="button"
-                        class="btn btn-outline-primary btn-sm listen-btn"
-                      >
-                        <i class="bi bi-volume-up-fill"></i> {% trans "Listen" %}
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-outline-secondary btn-sm copy-btn"
-                      >
-                        <i class="bi bi-clipboard"></i> {% trans "Copy" %}
-                      </button>
-                      {% if download_url %}
-                      <a href="{{ download_url }}" class="btn btn-outline-success btn-sm"><i class="bi bi-download"></i> {% trans "Download" %}</a>
-                      {% endif %}
-                    </div>
-                  </div>
+        <div id="translation-result-area" class="mt-4" aria-live="polite">
+          <div class="card border-success shadow-sm {% if not translation_result %}d-none{% endif %}" id="translation-result-card">
+            <div class="card-header bg-success text-white">
+              <h3 class="h5 mb-0"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> {% trans "Translation Result" %}</h3>
+            </div>
+            <div class="card-body bg-white">
+              <div class="translation-result p-3 bg-light rounded">
+                <p class="fs-5 mb-3 translation-output" id="translation-output" lang="{{ target_language|default:'es' }}">{{ translation_result|default:"" }}</p>
+                <p class="small text-warning-emphasis {% if not truncated %}d-none{% endif %}" id="truncated-note">{% trans "This document was long, so only the first part was translated." %}</p>
+                <div class="d-flex flex-wrap gap-2">
+                  <button type="button" class="btn btn-outline-primary btn-sm listen-btn"><i class="bi bi-volume-up-fill" aria-hidden="true"></i> {% trans "Listen" %}</button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm copy-btn"><i class="bi bi-clipboard" aria-hidden="true"></i> {% trans "Copy" %}</button>
+                  <a href="{{ download_url|default:'#' }}" class="btn btn-outline-success btn-sm download-translated {% if not download_url %}d-none{% endif %}"><i class="bi bi-download" aria-hidden="true"></i> {% trans "Download" %}</a>
                 </div>
               </div>
-              {% else %}
-              <div
-                class="card border-success shadow-sm d-none"
-                id="translation-result-card"
-              >
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="bi bi-check-circle-fill"></i> {% trans "Translation Result" %}</h5>
-                </div>
-                <div class="card-body bg-white">
-                  <div class="translation-result p-3 bg-light rounded">
-                    <p class="fs-5 mb-3" id="translation-output"></p>
-                    <div class="d-flex gap-2">
-                      <button
-                        type="button"
-                        class="btn btn-outline-primary btn-sm listen-btn"
-                      >
-                        <i class="bi bi-volume-up-fill"></i> {% trans "Listen" %}
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-outline-secondary btn-sm copy-btn"
-                      >
-                        <i class="bi bi-clipboard"></i> {% trans "Copy" %}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {% endif %}
             </div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   </div>
-</div>
-
+</section>
 {% endblock %}

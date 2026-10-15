@@ -1,15 +1,9 @@
-# Core framework
-Django==5.0.4
-
-# Web server and static files
-gunicorn==21.2.0
-whitenoise==6.6.0
-
-# Utilities your templates and views use
-PyPDF2==3.0.1
-python-docx==1.1.0
-pyttsx3
-requests
-Pillow==10.2.0
-beautifulsoup4
-inflect
+# Runtime dependencies (pinned). Install with: pip install -r requirements.txt
+Django==6.1.2
+deep-translator==1.11.4
+dj-database-url==3.1.2
+gunicorn==26.2.0
+inflect==7.5.0
+pypdf==6.20.1
+python-docx==1.2.0
+whitenoise==6.12.0
